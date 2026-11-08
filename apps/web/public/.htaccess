@@ -3,7 +3,8 @@
   RewriteBase /
 
   # Do not rewrite /api requests so backend handles them
-  RewriteRule ^api/ - [L]
+  RewriteCond %{REQUEST_URI} ^/api [NC]
+  RewriteRule ^ - [L]
 
   # If the requested file or directory exists, serve it directly
   RewriteCond %{REQUEST_FILENAME} -f [OR]
