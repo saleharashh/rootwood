@@ -1,0 +1,49 @@
+services:
+  db:
+    image: mysql:8.0
+    container_name: rootwood_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: rootwood
+      MYSQL_USER: rootwood
+      MYSQL_PASSWORD: rootwood_secret
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./backend/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    image: php:8.2-apache
+    container_name: rootwood_api
+    restart: unless-stopped
+    ports:
+      - "8000:80"
+    environment:
+      APP_ENV: development
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: rootwood
+      DB_USER: rootwood
+      DB_PASS: rootwood_secret
+      SITE_URL: http://localhost:5173
+      API_URL: http://localhost:8000/api
+      PAYMENT_SIMULATION: "true"
+      JWT_SECRET: craftedroot-docker-secure-jwt-secret-minimum-32-chars!
+      CORS_ORIGINS: http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173
+    volumes:
+      - ./backend:/var/www/html/api
+    depends_on:
+      db:
+        condition: service_healthy
+    command: >
+      bash -c "docker-php-ext-install pdo pdo_mysql && a2enmod rewrite headers && apache2-foreground"
+
+volumes:
+  mysql_data:
