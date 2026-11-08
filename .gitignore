@@ -1,0 +1,39 @@
+# dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# builds
+.next/
+out/
+dist/
+build/
+.turbo/
+
+# env (keep the documented examples)
+.env
+.env.*
+!.env.example
+
+# test & tooling artifacts
+coverage/
+playwright-report/
+test-results/
+blob-report/
+.freebuff/
+
+# misc
+.DS_Store
+*.pem
+*.zip
+acl-*
+frontend-dist/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.vercel
+*.tsbuildinfo
+next-env.d.ts
+
+# local source imagery (optimized WebP assets live in apps/web/public/images)
+vibe_images/

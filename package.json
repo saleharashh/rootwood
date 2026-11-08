@@ -1,0 +1,28 @@
+{
+  "name": "rootwood group",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Rootwood Group — wood shop e-commerce monorepo (Next.js + NestJS)",
+  "packageManager": "pnpm@11.24.0",
+  "scripts": {
+    "dev": "pnpm --parallel --filter \"./apps/*\" dev",
+    "dev:web": "pnpm --filter web dev",
+    "dev:api": "pnpm --filter api start:dev",
+    "build": "pnpm --filter api build && pnpm --filter web build",
+    "build:web": "pnpm --filter web build",
+    "build:api": "pnpm --filter api build",
+    "lint": "pnpm --parallel --filter \"./apps/*\" lint",
+    "typecheck": "pnpm --filter web exec tsc --noEmit && pnpm --filter api exec tsc --noEmit",
+    "start:api": "pnpm --filter api start:prod",
+    "db:seed": "pnpm --filter api seed",
+    "db:test:prepare": "pnpm --filter api test:db:prepare",
+    "test:api": "pnpm --filter api test --runInBand",
+    "test:e2e:api": "pnpm --filter api test:e2e",
+    "test:e2e:web": "pnpm db:test:prepare && pnpm --filter web test:e2e",
+    "screenshots": "pnpm db:test:prepare && pnpm --filter web screenshots"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "MIT"
+}
