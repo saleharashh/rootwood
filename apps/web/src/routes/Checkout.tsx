@@ -161,7 +161,13 @@ export function Checkout() {
     try {
       // 1. Create order
       const orderRes = await api.createOrder({
-        shippingAddress: finalAddress,
+        shippingAddress: {
+          ...finalAddress,
+          fullName: finalAddress.recipientName,
+          line1: finalAddress.street,
+          state: finalAddress.province,
+        },
+        note: customerNote.trim() || undefined,
         customerNote: customerNote.trim() || undefined,
         items: items.map((it) => ({
           productId: it.product.id,

@@ -181,10 +181,13 @@ function handle_payment(string $subpath, string $method): void {
     // 3. Verify Payment: POST /verify
     if ($subpath === '/verify' && $method === 'POST') {
         $body = get_json_input();
-        $trackId = trim($body['trackId'] ?? '');
-        $gateway = trim($body['gateway'] ?? '');
+        $trackId = trim((string)($body['trackId'] ?? $body['authority'] ?? $body['Authority'] ?? ''));
+        $gateway = trim((string)($body['gateway'] ?? 'zarinpal'));
+        if ($gateway === '') {
+            $gateway = 'zarinpal';
+        }
 
-        if (!$trackId || !$gateway) {
+        if (!$trackId) {
             json_error('اطلاعات تراکنش ارسالی ناقص است', 400);
         }
 

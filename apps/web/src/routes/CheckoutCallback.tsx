@@ -124,11 +124,11 @@ export function CheckoutCallback() {
 
             <div className="flex flex-col sm:flex-row gap-3 pt-2">
               <Link
-                href="/account"
-                className="flex-1 bg-amber-900 hover:bg-amber-800 text-white font-semibold py-3 px-4 rounded-xl text-xs sm:text-sm shadow-sm transition flex items-center justify-center gap-2"
+                href={order ? `/track?code=${order.orderNumber || order.id}` : "/account"}
+                className="flex-1 bg-[#b85d19] hover:bg-[#9e4e13] text-white font-semibold py-3 px-4 rounded-xl text-xs sm:text-sm shadow-sm transition flex items-center justify-center gap-2"
               >
                 <PackageCheck className="w-4 h-4" />
-                پیگیری سفارش در حساب کاربری
+                پیگیری زنده سفارش و مراحل ساخت
               </Link>
               <Link
                 href="/"
@@ -157,7 +157,7 @@ export function CheckoutCallback() {
             <div className="flex flex-col sm:flex-row gap-3 pt-2">
               <Link
                 href="/checkout"
-                className="flex-1 bg-amber-900 hover:bg-amber-800 text-white font-semibold py-3 px-4 rounded-xl text-xs sm:text-sm shadow-sm transition flex items-center justify-center gap-2"
+                className="flex-1 bg-[#b85d19] hover:bg-[#9e4e13] text-white font-semibold py-3 px-4 rounded-xl text-xs sm:text-sm shadow-sm transition flex items-center justify-center gap-2"
               >
                 <RotateCcw className="w-4 h-4" />
                 تلاش مجدد برای پرداخت

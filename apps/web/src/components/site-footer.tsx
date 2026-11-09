@@ -143,8 +143,13 @@ export function SiteFooter() {
                 </Link>
               </li>
               <li>
+                <Link href="/track" className="hover:text-[var(--color-accent)] font-semibold text-[#b85d19]">
+                  پیگیری زنده ساخت و مرسوله
+                </Link>
+              </li>
+              <li>
                 <Link href="/account" className="hover:text-[var(--color-accent)]">
-                  پیگیری وضعیت سفارش‌ها
+                  حساب کاربری و تاریخچه سفارش‌ها
                 </Link>
               </li>
             </ul>

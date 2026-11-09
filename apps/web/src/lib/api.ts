@@ -330,6 +330,7 @@ export interface ApiCallable {
     items: { productId: string; quantity: number }[];
   }) => Promise<{ order: Order }>;
   cancelOrder: (id: string) => Promise<{ message: string }>;
+  trackOrder: (code: string, phone?: string) => Promise<{ order: Order }>;
 
   // Payment
   getGateways: () => Promise<{ gateways: PaymentGateway[] }>;
@@ -377,6 +378,7 @@ export interface ApiCallable {
   getAdminContacts: () => Promise<{ messages: ContactMessage[] }>;
   updateContactStatus: (id: string, status: string) => Promise<{ message: string }>;
   createProduct: (data: any) => Promise<{ product: Product }>;
+  updateProduct: (id: string, data: any) => Promise<{ id: string; success: boolean }>;
 }
 
 const apiInstance = (async <T>(path: string, options: FetchOptions = {}): Promise<T> => {
@@ -408,18 +410,20 @@ function normalizeProduct(p: any): Product {
 
 // Normalizing helper for Order
 function normalizeOrder(o: any): Order {
-  const addr = o.shippingAddress || {};
+  if (!o) return {} as Order;
+  const raw = o.order || o;
+  const addr = raw.shippingAddress || {};
   return {
-    ...o,
-    recipientName: o.recipientName || addr.recipientName || addr.fullName || "کاربر",
-    phone: o.phone || addr.phone || "",
-    province: o.province || addr.province || addr.state || "",
-    city: o.city || addr.city || "",
-    street: o.street || addr.street || addr.line1 || "",
-    postalCode: o.postalCode || addr.postalCode || "",
-    totalAmount: o.totalAmount ?? o.total ?? 0,
-    total: o.total ?? o.totalAmount ?? 0,
-    items: (o.items || []).map((it: any) => ({
+    ...raw,
+    recipientName: raw.recipientName || addr.recipientName || addr.fullName || "کاربر",
+    phone: raw.phone || addr.phone || "",
+    province: raw.province || addr.province || addr.state || "",
+    city: raw.city || addr.city || "",
+    street: raw.street || addr.street || addr.line1 || "",
+    postalCode: raw.postalCode || addr.postalCode || "",
+    totalAmount: raw.totalAmount ?? raw.total ?? 0,
+    total: raw.total ?? raw.totalAmount ?? 0,
+    items: (raw.items || []).map((it: any) => ({
       ...it,
       productTitle: it.productTitle || it.name || it.product?.title || it.product?.name || "اثر چوبی",
     })),
@@ -516,7 +520,7 @@ apiInstance.getOrders = async () => {
 
 apiInstance.getOrder = async (id: string) => {
   const res = await request<any>(`/orders/${id}`);
-  return { order: normalizeOrder(res.order) };
+  return { order: normalizeOrder(res.order || res) };
 };
 
 apiInstance.createOrder = async (data) => {
@@ -524,7 +528,7 @@ apiInstance.createOrder = async (data) => {
     method: "POST",
     body: JSON.stringify(data),
   });
-  return { order: normalizeOrder(res.order) };
+  return { order: normalizeOrder(res.order || res) };
 };
 
 apiInstance.cancelOrder = async (id: string) => {
@@ -545,13 +549,29 @@ apiInstance.initiatePayment = async (data) => {
 };
 
 apiInstance.verifyPayment = async (data) => {
+  const trackId = data.trackId || data.authority;
   const res = await request<any>("/payment/verify", {
     method: "POST",
-    body: JSON.stringify(data),
+    body: JSON.stringify({
+      ...data,
+      trackId,
+      gateway: data.gateway || "zarinpal",
+    }),
   });
   return {
     ...res,
+    verified: res.verified ?? res.success ?? false,
+    success: res.success ?? res.verified ?? false,
     order: res.order ? normalizeOrder(res.order) : undefined,
+  };
+};
+
+apiInstance.trackOrder = async (code: string, phone?: string) => {
+  const query = new URLSearchParams({ code });
+  if (phone) query.set("phone", phone);
+  const res = await request<any>(`/orders/track?${query.toString()}`);
+  return {
+    order: normalizeOrder(res.order),
   };
 };
 
@@ -640,8 +660,10 @@ apiInstance.getAdminOrders = async (params = {}) => {
   }
   const qs = query.toString();
   const res = await request<any>(`/admin/orders${qs ? `?${qs}` : ""}`);
+  const rawList = res.orders || res.items || (Array.isArray(res) ? res : []);
   return {
-    orders: (res.orders || []).map(normalizeOrder),
+    orders: rawList.map(normalizeOrder),
+    total: res.total ?? rawList.length,
   };
 };
 
@@ -654,8 +676,9 @@ apiInstance.updateOrderStatus = async (orderId, status) => {
 
 apiInstance.getAdminReviews = async () => {
   const res = await request<any>("/admin/reviews");
+  const rawList = Array.isArray(res) ? res : (res.reviews || res.items || []);
   return {
-    reviews: (res.reviews || []).map(normalizeReview),
+    reviews: rawList.map(normalizeReview),
   };
 };
 
@@ -667,7 +690,11 @@ apiInstance.updateReviewApproval = async (reviewId, approved) => {
 };
 
 apiInstance.getAdminContacts = async () => {
-  return request("/admin/contact");
+  const res = await request<any>("/admin/contact");
+  const rawList = Array.isArray(res) ? res : (res.messages || res.items || []);
+  return {
+    messages: rawList,
+  };
 };
 
 apiInstance.updateContactStatus = async (id, status) => {
@@ -683,6 +710,13 @@ apiInstance.createProduct = async (data) => {
     body: JSON.stringify(data),
   });
   return { product: normalizeProduct(res.product) };
+};
+
+apiInstance.updateProduct = async (id: string, data: any) => {
+  return request(`/products/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
 };
 
 export const api = apiInstance;

@@ -65,15 +65,71 @@ function format_order_row(array $order, PDO $pdo): array {
 
 function handle_orders(string $subpath, string $method): void {
     $pdo = get_db();
+
+    // 0. Public Order Tracking: GET /track?code=...
+    if (($subpath === '/track' || $subpath === '/lookup') && $method === 'GET') {
+        $code = trim($_GET['code'] ?? $_GET['orderNumber'] ?? $_GET['orderId'] ?? '');
+        $phone = trim($_GET['phone'] ?? '');
+
+        if ($code === '') {
+            json_error('کد یا شناسه سفارش الزامی است', 400);
+        }
+
+        $where = ['(o.id = ? OR o.order_number = ? OR o.id LIKE ?)'];
+        $params = [$code, $code, "$code%"];
+
+        if ($phone !== '') {
+            $where[] = '(u.phone = ? OR JSON_UNQUOTE(JSON_EXTRACT(o.shipping_address, "$.phone")) = ?)';
+            $params[] = $phone;
+            $params[] = $phone;
+        }
+
+        $sql = "
+            SELECT o.*, u.name AS user_name, u.email AS user_email, u.phone AS user_phone
+            FROM orders o
+            JOIN users u ON o.user_id = u.id
+            WHERE " . implode(' AND ', $where) . "
+            LIMIT 1
+        ";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+        $order = $stmt->fetch();
+
+        if (!$order) {
+            json_error('سفارشی با این مشخصات در سیستم کارگاه یافت نشد', 404);
+        }
+
+        $formatted = format_order_row($order, $pdo);
+        // Mask personal contact details in public tracking response
+        if (!empty($formatted['shippingAddress']['phone'])) {
+            $p = (string)$formatted['shippingAddress']['phone'];
+            $formatted['shippingAddress']['phone'] = strlen($p) > 7 ? substr($p, 0, 4) . '***' . substr($p, -4) : '***';
+        }
+        if (!empty($formatted['email'])) {
+            $e = (string)$formatted['email'];
+            $at = strpos($e, '@');
+            $formatted['email'] = $at > 2 ? substr($e, 0, 2) . '***' . substr($e, $at) : '***';
+        }
+
+        json_response(['order' => $formatted]);
+    }
+
     $user = require_auth();
 
     // 1. Create Order: POST /
     if (($subpath === '' || $subpath === '/') && $method === 'POST') {
         $body = get_json_input();
         $shippingAddr = $body['shippingAddress'] ?? null;
-        $note = trim($body['note'] ?? '') ?: null;
+        $note = trim((string)($body['note'] ?? $body['customerNote'] ?? '')) ?: null;
 
-        if (!$shippingAddr || empty($shippingAddr['fullName']) || empty($shippingAddr['line1']) || empty($shippingAddr['city']) || empty($shippingAddr['postalCode'])) {
+        $fullName = trim((string)($shippingAddr['fullName'] ?? $shippingAddr['recipientName'] ?? ''));
+        $line1 = trim((string)($shippingAddr['line1'] ?? $shippingAddr['street'] ?? ''));
+        $city = trim((string)($shippingAddr['city'] ?? ''));
+        $state = trim((string)($shippingAddr['state'] ?? $shippingAddr['province'] ?? ''));
+        $postalCode = trim((string)($shippingAddr['postalCode'] ?? ''));
+        $phone = trim((string)($shippingAddr['phone'] ?? '')) ?: ($user['phone'] ?? '');
+
+        if (!$shippingAddr || empty($fullName) || empty($line1) || empty($city)) {
             json_error('آدرس تحویل گیرنده به طور کامل وارد نشده است', 400);
         }
 
@@ -132,14 +188,17 @@ function handle_orders(string $subpath, string $method): void {
             $total = $subtotal + $shipping;
 
             $addressJson = json_encode([
-                'fullName' => trim($shippingAddr['fullName']),
-                'line1' => trim($shippingAddr['line1']),
-                'line2' => trim($shippingAddr['line2'] ?? '') ?: null,
-                'city' => trim($shippingAddr['city']),
-                'state' => trim($shippingAddr['state'] ?? '') ?: null,
-                'postalCode' => trim($shippingAddr['postalCode']),
+                'fullName' => $fullName,
+                'recipientName' => $fullName,
+                'line1' => $line1,
+                'street' => $line1,
+                'line2' => trim((string)($shippingAddr['line2'] ?? '')) ?: null,
+                'city' => $city,
+                'state' => $state ?: null,
+                'province' => $state ?: null,
+                'postalCode' => $postalCode ?: '0000000000',
                 'country' => 'IR',
-                'phone' => trim($shippingAddr['phone'] ?? '') ?: $user['phone'],
+                'phone' => $phone,
             ], JSON_UNESCAPED_UNICODE);
 
             $insOrder = $pdo->prepare("
@@ -163,10 +222,10 @@ function handle_orders(string $subpath, string $method): void {
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
                 ");
                 $addrStmt->execute([
-                    generate_uuid(), $user['id'], trim($shippingAddr['fullName']),
-                    trim($shippingAddr['line1']), trim($shippingAddr['line2'] ?? '') ?: null,
-                    trim($shippingAddr['city']), trim($shippingAddr['state'] ?? '') ?: null,
-                    trim($shippingAddr['postalCode']), trim($shippingAddr['phone'] ?? '') ?: $user['phone']
+                    generate_uuid(), $user['id'], $fullName,
+                    $line1, trim((string)($shippingAddr['line2'] ?? '')) ?: null,
+                    $city, $state ?: null,
+                    $postalCode ?: null, $phone
                 ]);
             }
 
@@ -189,7 +248,8 @@ function handle_orders(string $subpath, string $method): void {
         $stmt->execute([$orderId]);
         $order = $stmt->fetch();
 
-        json_response(format_order_row($order, $pdo), 201);
+        $formatted = format_order_row($order, $pdo);
+        json_response(array_merge($formatted, ['order' => $formatted]), 201);
     }
 
     // 2. List Customer Orders: GET /
@@ -225,7 +285,8 @@ function handle_orders(string $subpath, string $method): void {
             json_error('سفارش مورد نظر پیدا نشد', 404);
         }
 
-        json_response(format_order_row($order, $pdo));
+        $formatted = format_order_row($order, $pdo);
+        json_response(array_merge($formatted, ['order' => $formatted]));
     }
 
     // 4. Cancel Order: POST /{id}/cancel (Restores reserved stock)

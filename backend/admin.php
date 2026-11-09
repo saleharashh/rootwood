@@ -122,7 +122,7 @@ function handle_admin(string $subpath, string $method): void {
         $body = get_json_input();
         $newStatus = trim($body['status'] ?? '');
 
-        $allowed = ['PENDING', 'PAID', 'SHIPPED', 'DELIVERED', 'CANCELLED'];
+        $allowed = ['PENDING', 'PAID', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED'];
         if (!in_array($newStatus, $allowed, true)) {
             json_error('وضعیت انتخابی نامعتبر است', 400);
         }
@@ -137,8 +137,8 @@ function handle_admin(string $subpath, string $method): void {
 
         $pdo->beginTransaction();
         try {
-            // If transitioning to CANCELLED from PENDING or PAID, restore inventory
-            if ($newStatus === 'CANCELLED' && in_array($current['status'], ['PENDING', 'PAID'], true)) {
+            // If transitioning to CANCELLED from PENDING, PAID, or PROCESSING, restore inventory
+            if ($newStatus === 'CANCELLED' && in_array($current['status'], ['PENDING', 'PAID', 'PROCESSING'], true)) {
                 $itemStmt = $pdo->prepare("SELECT product_id, quantity FROM order_items WHERE order_id = ?");
                 $itemStmt->execute([$orderId]);
                 $items = $itemStmt->fetchAll();

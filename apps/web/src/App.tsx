@@ -18,6 +18,7 @@ import { Blog } from "@/routes/Blog";
 import { BlogPostView } from "@/routes/BlogPost";
 import { About } from "@/routes/About";
 import { Contact } from "@/routes/Contact";
+import { TrackOrder } from "@/routes/TrackOrder";
 
 function NotFound() {
   return (
@@ -57,6 +58,7 @@ export function App() {
                   <Route path="/checkout" component={Checkout} />
                   <Route path="/checkout/callback" component={CheckoutCallback} />
                   <Route path="/account" component={Account} />
+                  <Route path="/track" component={TrackOrder} />
                   <Route path="/admin" component={Admin} />
                   <Route path="/blog" component={Blog} />
                   <Route path="/blog/:slug" component={BlogPostView} />

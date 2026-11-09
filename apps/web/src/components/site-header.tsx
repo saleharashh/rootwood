@@ -15,6 +15,7 @@ import {
   Hammer,
   BookOpen,
   Phone,
+  Truck,
 } from "lucide-react";
 import { useAuth } from "./auth-provider";
 import { useCart } from "./cart-provider";
@@ -428,6 +429,19 @@ export function SiteHeader() {
                 <span>سفارش ساخت اختصاصی</span>
               </div>
               <Badge variant="wood" className="text-[10px]">ابعاد دلخواه</Badge>
+            </Link>
+
+            {/* Track Order */}
+            <Link
+              href="/track"
+              onClick={() => setMobileDrawerOpen(false)}
+              className="flex items-center justify-between p-3 rounded-xl text-sm font-semibold text-[#2b1e17] hover:bg-[#fdf1e7]/60 transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <Truck className="w-4 h-4 text-[#8c796e]" />
+                <span>پیگیری ساخت و ارسال</span>
+              </div>
+              <ArrowLeft className="w-3.5 h-3.5 text-[#8c796e]" />
             </Link>
 
             {/* Journal */}
