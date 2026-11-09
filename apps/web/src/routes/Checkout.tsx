@@ -462,7 +462,7 @@ export function Checkout() {
                 </div>
                 <div className="flex justify-between items-baseline font-bold pt-3 border-t border-stone-100">
                   <span className="text-stone-900">مبلغ نهایی پرداخت:</span>
-                  <span className="text-xl font-extrabold text-amber-950 font-serif">
+                  <span className="text-xl font-extrabold text-[#8c4f27] font-serif">
                     {formatPriceToman(total)}
                   </span>
                 </div>

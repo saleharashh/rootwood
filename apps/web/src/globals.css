@@ -1,27 +1,27 @@
 @import "tailwindcss";
 
 @theme inline {
-  --color-bg: #faf7f2;
+  --color-bg: #fcfaf7;
   --color-surface: #ffffff;
-  --color-surface-2: #f4efea;
-  --color-border: #ded6c8;
-  --color-border-strong: #bfb29e;
-  --color-ink: #14110e;
-  --color-ink-soft: #38312b;
-  --color-ink-mute: #594f45;
-  --color-accent: #7a4119;
-  --color-accent-strong: #52270c;
-  --color-accent-soft: #f2e6d8;
-  --color-success: #264e18;
-  --color-error: #932819;
-  --color-wood: #1c1510;
-  --color-wood-light: #7a4119;
+  --color-surface-2: #f8ede2;
+  --color-border: #eddcd0;
+  --color-border-strong: #dbc5b4;
+  --color-ink: #2e1e16;
+  --color-ink-soft: #5c4436;
+  --color-ink-mute: #876f61;
+  --color-accent: #8c4f27;
+  --color-accent-strong: #78401d;
+  --color-accent-soft: #f8ede2;
+  --color-success: #2d6124;
+  --color-error: #a82e1e;
+  --color-wood: #78401d;
+  --color-wood-light: #a35c2f;
 
   --font-sans: "Vazirmatn", system-ui, -apple-system, "Segoe UI", Roboto, Tahoma, sans-serif;
 
-  --shadow-card: 0 1px 3px rgba(20, 17, 14, 0.05), 0 6px 18px rgba(20, 17, 14, 0.04);
-  --shadow-elevated: 0 3px 8px rgba(20, 17, 14, 0.06), 0 16px 36px rgba(20, 17, 14, 0.1);
-  --shadow-focus: 0 0 0 3px rgba(122, 65, 25, 0.22);
+  --shadow-card: 0 1px 3px rgba(20, 17, 14, 0.04), 0 6px 18px rgba(20, 17, 14, 0.04);
+  --shadow-elevated: 0 3px 8px rgba(20, 17, 14, 0.06), 0 16px 36px rgba(20, 17, 14, 0.08);
+  --shadow-focus: 0 0 0 3px rgba(140, 79, 39, 0.22);
 }
 
 :root {

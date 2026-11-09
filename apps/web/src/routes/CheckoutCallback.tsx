@@ -106,7 +106,7 @@ export function CheckoutCallback() {
                   </div>
                   <div className="flex justify-between items-center text-stone-600">
                     <span>مبلغ پرداخت‌شده:</span>
-                    <span className="font-bold text-amber-950 font-serif">
+                    <span className="font-bold text-[#8c4f27] font-serif">
                       {formatPriceToman(order.totalAmount)}
                     </span>
                   </div>

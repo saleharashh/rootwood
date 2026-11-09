@@ -99,7 +99,7 @@ export function ProductCard({ product }: ProductCardProps) {
           </div>
 
           {/* Title */}
-          <h3 className="text-base font-bold font-serif text-stone-900 group-hover:text-amber-950 transition-colors line-clamp-1 leading-snug">
+          <h3 className="text-base font-bold font-serif text-stone-900 group-hover:text-[#8c4f27] transition-colors line-clamp-1 leading-snug">
             <Link href={`/products/${product.slug}`}>{product.name || product.title}</Link>
           </h3>
 
@@ -132,7 +132,7 @@ export function ProductCard({ product }: ProductCardProps) {
                 {formatPriceToman(product.compareAt)}
               </div>
             )}
-            <div className="text-sm sm:text-base font-extrabold text-amber-950 font-serif">
+            <div className="text-sm sm:text-base font-extrabold text-[#8c4f27] font-serif">
               {formatPriceToman(product.price)}
             </div>
           </div>
@@ -147,7 +147,7 @@ export function ProductCard({ product }: ProductCardProps) {
             className={`gap-1.5 rounded-xl text-xs transition-all ${
               justAdded
                 ? "bg-emerald-800 text-white border-emerald-800"
-                : "hover:bg-amber-950 hover:text-white hover:border-amber-950"
+                : "hover:bg-[#8c4f27] hover:text-white hover:border-[#8c4f27]"
             }`}
           >
             {justAdded ? (

@@ -8,9 +8,9 @@ const chipVariants = cva(
   {
     variants: {
       selected: {
-        true: "bg-amber-950 text-amber-50 border-amber-950 shadow-xs font-semibold ring-1 ring-amber-950/20",
+        true: "bg-[#8c4f27] text-white border-[#8c4f27] shadow-xs font-semibold ring-1 ring-[#8c4f27]/20",
         false:
-          "bg-white/90 text-stone-700 border-stone-200/90 hover:bg-stone-50 hover:border-stone-300 shadow-2xs",
+          "bg-white text-[#4a2c1b] border-[#e2d5c7] hover:bg-[#fbf4ec] hover:border-[#b58057] shadow-2xs",
       },
       size: {
         default: "text-xs px-3 py-1.5",

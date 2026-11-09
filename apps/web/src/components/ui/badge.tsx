@@ -16,9 +16,9 @@ const badgeVariants = cva(
         outline:
           "border border-stone-200 text-stone-700 bg-white/80",
         wood:
-          "border border-amber-900/20 bg-amber-50 text-amber-950 font-medium",
+          "border border-[#8c4f27]/20 bg-[#fbf4ec] text-[#78401d] font-semibold",
         gold:
-          "border border-amber-400/30 bg-amber-500/10 text-amber-800 font-bold",
+          "border border-[#b87333]/30 bg-[#f8ede2] text-[#8c4f27] font-bold",
         success:
           "border border-emerald-200 bg-emerald-50 text-emerald-800",
       },

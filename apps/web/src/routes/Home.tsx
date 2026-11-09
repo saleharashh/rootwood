@@ -143,7 +143,7 @@ export function Home() {
               </h2>
             </div>
             <Link href="/products">
-              <Button variant="ghost" size="sm" className="gap-1 text-amber-950 font-semibold self-start sm:self-auto">
+              <Button variant="ghost" size="sm" className="gap-1 text-[#8c4f27] font-semibold self-start sm:self-auto hover:bg-[#f8ede2]">
                 <span>مشاهده تمامی دسته‌ها</span>
                 <ArrowLeft className="w-4 h-4" />
               </Button>
@@ -155,13 +155,13 @@ export function Home() {
               <Link
                 key={cat.id}
                 href={`/products?category=${cat.slug}`}
-                className="group relative flex flex-col justify-between p-6 rounded-3xl border border-stone-200/90 bg-white shadow-2xs hover:shadow-card hover:border-amber-900/40 transition-all duration-300"
+                className="group relative flex flex-col justify-between p-6 rounded-3xl border border-stone-200/90 bg-white shadow-2xs hover:shadow-card hover:border-[#8c4f27]/40 transition-all duration-300"
               >
                 <div className="space-y-2">
-                  <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-950 flex items-center justify-center font-bold mb-4 group-hover:bg-amber-950 group-hover:text-amber-50 transition-colors">
+                  <div className="w-12 h-12 rounded-2xl bg-[#f8ede2] text-[#8c4f27] flex items-center justify-center font-bold mb-4 group-hover:bg-[#8c4f27] group-hover:text-white transition-colors">
                     <Layers className="w-6 h-6" />
                   </div>
-                  <h3 className="text-lg font-bold font-serif text-stone-900 group-hover:text-amber-950 transition-colors">
+                  <h3 className="text-lg font-bold font-serif text-stone-900 group-hover:text-[#8c4f27] transition-colors">
                     {cat.name}
                   </h3>
                   <p className="text-xs text-stone-500 line-clamp-2 leading-relaxed">
@@ -222,10 +222,10 @@ export function Home() {
       {/* 4. WORKSHOP PHILOSOPHY & CRAFTSMANSHIP JOURNEY                           */}
       {/* ========================================================================= */}
       <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="rounded-[2.5rem] border border-stone-200/90 bg-[#241711] text-[#fcfaf7] p-8 sm:p-14 lg:p-16 shadow-xl relative overflow-hidden">
+        <div className="rounded-[2.5rem] border border-stone-200/90 bg-gradient-to-br from-[#4a2b19] via-[#5c351f] to-[#3f2415] text-[#fcfaf7] p-8 sm:p-14 lg:p-16 shadow-xl relative overflow-hidden">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
             <div className="lg:col-span-7 space-y-6">
-              <span className="text-xs font-bold text-amber-400 uppercase tracking-widest flex items-center gap-1.5">
+              <span className="text-xs font-bold text-amber-300 uppercase tracking-widest flex items-center gap-1.5">
                 <Trees className="w-4 h-4" />
                 <span>فرآیند خلق در کارگاه روت‌وود</span>
               </span>
@@ -312,7 +312,7 @@ export function Home() {
               </h2>
             </div>
             <Link href="/blog">
-              <Button variant="ghost" size="sm" className="gap-1 text-amber-950 font-semibold">
+              <Button variant="ghost" size="sm" className="gap-1 text-[#8c4f27] hover:bg-[#f8ede2] font-semibold">
                 <span>مشاهده تمام مقالات</span>
                 <ArrowLeft className="w-4 h-4" />
               </Button>
@@ -323,7 +323,7 @@ export function Home() {
             {recentPosts.map((post) => (
               <article
                 key={post.id}
-                className="group flex flex-col justify-between rounded-3xl border border-stone-200/90 bg-white p-5 shadow-2xs hover:shadow-card hover:border-amber-900/30 transition-all duration-300"
+                className="group flex flex-col justify-between rounded-3xl border border-stone-200/90 bg-white p-5 shadow-2xs hover:shadow-card hover:border-[#8c4f27]/30 transition-all duration-300"
               >
                 <Link
                   href={`/blog/${post.slug}`}
@@ -349,7 +349,7 @@ export function Home() {
                     </span>
                   </div>
 
-                  <h3 className="text-base font-bold font-serif text-stone-900 group-hover:text-amber-950 transition-colors line-clamp-2 leading-snug">
+                  <h3 className="text-base font-bold font-serif text-stone-900 group-hover:text-[#8c4f27] transition-colors line-clamp-2 leading-snug">
                     <Link href={`/blog/${post.slug}`}>{post.title}</Link>
                   </h3>
 
@@ -358,7 +358,7 @@ export function Home() {
                   </p>
                 </div>
 
-                <div className="pt-4 mt-4 border-t border-stone-100 flex items-center justify-between text-xs font-bold text-amber-900">
+                <div className="pt-4 mt-4 border-t border-stone-100 flex items-center justify-between text-xs font-bold text-[#8c4f27]">
                   <span>مطالعه مقاله</span>
                   <ArrowUpRight className="w-4 h-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
                 </div>

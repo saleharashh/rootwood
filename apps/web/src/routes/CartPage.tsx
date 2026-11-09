@@ -132,7 +132,7 @@ export function CartPage() {
                         </>
                       )}
                     </div>
-                    <div className="text-sm font-bold text-amber-950 pt-1">
+                    <div className="text-sm font-bold text-[#8c4f27] pt-1">
                       {formatPriceToman(item.product.price)}
                     </div>
                   </div>
@@ -220,7 +220,7 @@ export function CartPage() {
 
                 <div className="pt-3 border-t border-stone-100 flex justify-between items-baseline">
                   <span className="font-bold text-stone-900">مبلغ نهایی قابل پرداخت:</span>
-                  <span className="text-2xl font-extrabold text-amber-950 font-serif">
+                  <span className="text-2xl font-extrabold text-[#8c4f27] font-serif">
                     {formatPriceToman(total)}
                   </span>
                 </div>

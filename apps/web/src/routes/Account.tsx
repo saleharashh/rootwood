@@ -205,7 +205,7 @@ export function Account() {
                   <h1 className="font-bold text-stone-900 text-base">{user.name}</h1>
                   <p className="text-xs text-stone-500 mt-0.5">{user.phone || user.email}</p>
                   {user.role === "ADMIN" && (
-                    <span className="inline-block mt-1 text-[11px] font-bold bg-amber-950 text-amber-100 px-2 py-0.5 rounded">
+                    <span className="inline-block mt-1 text-[11px] font-bold bg-[#8c4f27] text-white px-2 py-0.5 rounded">
                       مدیر کارگاه
                     </span>
                   )}
@@ -360,7 +360,7 @@ export function Account() {
                             </div>
                             <div className="flex items-center gap-3">
                               <span className="text-stone-600">مبلغ پرداخت:</span>
-                              <span className="font-extrabold text-amber-950 font-serif text-base">
+                              <span className="font-extrabold text-[#8c4f27] font-serif text-base">
                                 {formatPriceToman(order.totalAmount)}
                               </span>
                             </div>

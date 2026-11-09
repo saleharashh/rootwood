@@ -8,21 +8,21 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          "bg-amber-950 text-amber-50 shadow-sm hover:bg-amber-900 hover:shadow-md",
+          "bg-[#8c4f27] text-white shadow-xs hover:bg-[#78401d] hover:shadow-sm",
         wood:
-          "bg-[#241711] text-[#fbf8f5] shadow-sm hover:bg-[#38241b] border border-[#4a3225]/40",
+          "bg-[#78401d] text-[#fcfaf7] shadow-xs hover:bg-[#633316] border border-[#93532a]/20",
         destructive:
           "bg-red-700 text-white shadow-xs hover:bg-red-800",
         outline:
-          "border border-stone-300/80 bg-white/90 text-stone-800 shadow-2xs hover:bg-stone-50 hover:border-amber-900/50 hover:text-amber-950",
+          "border border-[#e2d5c7] bg-white/90 text-[#3b2214] shadow-2xs hover:bg-[#fbf4ec] hover:border-[#8c4f27]/50 hover:text-[#78401d]",
         secondary:
-          "bg-stone-100 text-stone-800 shadow-2xs hover:bg-stone-200/80",
+          "bg-[#f5ecdf] text-[#4a2c1b] shadow-2xs hover:bg-[#ede1d0]",
         ghost:
-          "text-stone-700 hover:bg-stone-100/80 hover:text-stone-900",
+          "text-[#543c2f] hover:bg-[#f5ecdf]/80 hover:text-[#2a1c14]",
         link:
-          "text-amber-900 underline-offset-4 hover:underline p-0 h-auto font-medium",
+          "text-[#8c4f27] underline-offset-4 hover:underline p-0 h-auto font-medium",
         gold:
-          "bg-gradient-to-r from-amber-700 via-amber-600 to-amber-800 text-white shadow-sm hover:brightness-110",
+          "bg-gradient-to-r from-[#9c5d31] via-[#b87333] to-[#8c4f27] text-white shadow-xs hover:brightness-105",
       },
       size: {
         default: "h-10 px-4 py-2",
