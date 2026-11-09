@@ -28,9 +28,17 @@ if (file_exists($envFile)) {
     }
 }
 
-function env(string $key, ?string $default = null): ?string {
-    $val = $_ENV[$key] ?? getenv($key);
-    return ($val !== false && $val !== null && $val !== '') ? $val : $default;
+if (!function_exists('env')) {
+    function env(string $key, ?string $default = null): ?string {
+        if (array_key_exists($key, $_ENV)) {
+            return (string)$_ENV[$key];
+        }
+        $val = getenv($key);
+        if ($val !== false) {
+            return (string)$val;
+        }
+        return $default;
+    }
 }
 
 return [

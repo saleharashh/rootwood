@@ -1,20 +1,23 @@
 import React, { useState } from "react";
 import { Link } from "wouter";
-import { ShoppingBag, Star, Check } from "lucide-react";
-import { Product } from "@/lib/api";
-import { formatPrice } from "@/lib/price";
+import { ShoppingBag, Star, Check, Flame, ArrowLeft } from "lucide-react";
+import { type Product } from "@/lib/api";
+import { formatPriceToman, toPersianDigits } from "@/lib/price";
 import { useCart } from "./cart-provider";
+import { Button } from "./ui/button";
+import { Badge } from "./ui/badge";
 
 interface ProductCardProps {
   product: Product;
 }
 
 export function ProductCard({ product }: ProductCardProps) {
-  const { addItem } = useCart();
+  const { addItem, getItemQuantity } = useCart();
   const [adding, setAdding] = useState(false);
-  const [added, setAdded] = useState(false);
+  const [justAdded, setJustAdded] = useState(false);
 
   const imageUrl = product.images?.[0]?.url || product.imageUrl || "/images/workshop.webp";
+  const inCartQty = getItemQuantity(product.id);
 
   const handleAddToCart = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -24,17 +27,28 @@ export function ProductCard({ product }: ProductCardProps) {
     setAdding(true);
     try {
       await addItem(product.id, 1);
-      setAdded(true);
-      setTimeout(() => setAdded(false), 2000);
+      setJustAdded(true);
+      setTimeout(() => setJustAdded(false), 2000);
     } finally {
       setAdding(false);
     }
   };
 
+  const discountPercent =
+    product.compareAt && product.compareAt > product.price
+      ? Math.round(((product.compareAt - product.price) / product.compareAt) * 100)
+      : null;
+
+  const ratingVal =
+    typeof product.rating === "number" ? product.rating : product.ratingObj?.average ?? 5;
+
   return (
-    <article className="group relative flex flex-col rounded-3xl border border-[var(--color-border)] bg-white p-3.5 sm:p-4 shadow-2xs hover:shadow-card transition-all duration-300">
+    <article className="group relative flex flex-col rounded-3xl border border-stone-200/90 bg-white p-3.5 sm:p-4 shadow-card hover:shadow-xl hover:border-amber-900/30 transition-all duration-300">
       {/* Image container */}
-      <Link href={`/products/${product.slug}`} className="relative aspect-4/3 w-full overflow-hidden rounded-2xl bg-[var(--color-surface-2)]">
+      <Link
+        href={`/products/${product.slug}`}
+        className="relative aspect-4/3 w-full overflow-hidden rounded-2xl bg-stone-100 block"
+      >
         <img
           src={imageUrl}
           alt={product.images?.[0]?.alt || product.name || product.title}
@@ -42,104 +56,117 @@ export function ProductCard({ product }: ProductCardProps) {
           loading="lazy"
         />
 
-        {/* Badges */}
-        <div className="absolute top-3 right-3 flex flex-col gap-1.5 items-end">
+        {/* Floating Badges */}
+        <div className="absolute top-3 right-3 flex flex-col gap-1.5 items-end z-10">
           {product.featured && (
-            <span className="badge bg-[var(--color-wood)] text-white text-[10px] font-bold shadow-xs">
-              پرفروش
-            </span>
+            <Badge variant="gold" className="shadow-xs backdrop-blur-xs gap-1">
+              <Flame className="w-3 h-3 text-amber-700 fill-current" />
+              <span>پرفروش کارگاه</span>
+            </Badge>
           )}
-          {product.compareAt && product.compareAt > product.price && (
-            <span className="badge bg-red-600 text-white text-[10px] font-bold shadow-xs">
-              تخفیف ویژه
-            </span>
+          {discountPercent && (
+            <Badge variant="destructive" className="shadow-xs font-bold">
+              {toPersianDigits(discountPercent)}٪ تخفیف
+            </Badge>
           )}
         </div>
 
+        {/* Wood Species Floating Tag */}
+        {product.woodType && (
+          <div className="absolute bottom-3 right-3 z-10">
+            <span className="text-[11px] font-semibold bg-stone-900/80 backdrop-blur-xs text-amber-100 px-2.5 py-1 rounded-xl shadow-xs border border-white/10">
+              {product.woodType}
+            </span>
+          </div>
+        )}
+
+        {/* Out of Stock Overlay */}
         {product.stock <= 0 && (
-          <div className="absolute inset-0 bg-white/80 backdrop-blur-xs flex items-center justify-center">
-            <span className="badge bg-stone-800 text-white font-bold text-xs px-3 py-1.5">
-              ناموجود
+          <div className="absolute inset-0 bg-stone-950/75 backdrop-blur-xs flex items-center justify-center z-20">
+            <span className="text-white font-bold text-xs px-4 py-2 rounded-xl bg-stone-900 border border-stone-700">
+              سفارشی‌ساخت (عدم موجودی آماده)
             </span>
           </div>
         )}
       </Link>
 
       {/* Content */}
-      <div className="flex flex-1 flex-col justify-between pt-4">
-        <div>
-          {/* Category & Wood tags */}
-          <div className="flex items-center justify-between text-[11px] font-semibold text-[var(--color-ink-mute)] mb-1.5">
-            <span>{product.category?.name || "مبلمان"}</span>
-            {product.woodType && (
-              <span className="text-[var(--color-accent-strong)]">{product.woodType}</span>
-            )}
+      <div className="flex flex-1 flex-col justify-between pt-4 space-y-3">
+        <div className="space-y-1.5">
+          {/* Category Tag */}
+          <div className="text-[11px] font-semibold text-stone-500">
+            {product.category?.name || "دست‌سازه‌های چوبی"}
           </div>
 
           {/* Title */}
-          <h3 className="text-base font-bold text-[var(--color-wood)] group-hover:text-[var(--color-accent)] transition-colors line-clamp-1">
-            <Link href={`/products/${product.slug}`}>{product.name}</Link>
+          <h3 className="text-base font-bold font-serif text-stone-900 group-hover:text-amber-950 transition-colors line-clamp-1 leading-snug">
+            <Link href={`/products/${product.slug}`}>{product.name || product.title}</Link>
           </h3>
 
-          {/* Tagline */}
-          {product.tagline && (
-            <p className="text-xs text-[var(--color-ink-soft)] mt-1 line-clamp-1">
-              {product.tagline}
-            </p>
-          )}
+          {/* Tagline / Excerpt */}
+          <p className="text-xs text-stone-500 line-clamp-1 leading-relaxed">
+            {product.tagline || product.shortDescription || product.description?.slice(0, 80)}
+          </p>
 
           {/* Rating */}
-          <div className="flex items-center gap-1.5 mt-2">
+          <div className="flex items-center gap-1.5 pt-1 text-xs text-stone-600">
             <div className="flex items-center text-amber-500">
               <Star className="w-3.5 h-3.5 fill-current" />
             </div>
-            <span className="text-xs font-bold text-[var(--color-ink)]">
-              {(typeof product.rating === "number" ? product.rating : (product.ratingObj?.average ?? 5)).toLocaleString("fa-IR")}
+            <span className="font-bold text-stone-900">
+              {toPersianDigits(ratingVal.toFixed(1))}
             </span>
             {product.reviewsCount > 0 && (
-              <span className="text-[11px] text-[var(--color-ink-mute)]">
-                ({product.reviewsCount.toLocaleString("fa-IR")})
+              <span className="text-[11px] text-stone-400">
+                ({toPersianDigits(product.reviewsCount)} نظر)
               </span>
             )}
           </div>
         </div>
 
-        {/* Price & Action */}
-        <div className="flex items-center justify-between pt-4 mt-2 border-t border-[var(--color-border)]/60">
+        {/* Price & Action Button */}
+        <div className="flex items-center justify-between pt-3 border-t border-stone-100">
           <div>
-            <div className="text-sm sm:text-base font-black text-[var(--color-wood)]">
-              {formatPrice(product.price)}
-            </div>
             {product.compareAt && product.compareAt > product.price && (
-              <div className="text-[11px] text-[var(--color-ink-mute)] line-through">
-                {formatPrice(product.compareAt)}
+              <div className="text-[11px] text-stone-400 line-through">
+                {formatPriceToman(product.compareAt)}
               </div>
             )}
+            <div className="text-sm sm:text-base font-extrabold text-amber-950 font-serif">
+              {formatPriceToman(product.price)}
+            </div>
           </div>
 
-          <button
+          {/* Add to Cart Button */}
+          <Button
             type="button"
+            size="sm"
+            variant={justAdded ? "wood" : "outline"}
             onClick={handleAddToCart}
             disabled={product.stock <= 0 || adding}
-            className={`btn py-2 px-3 text-xs font-bold gap-1.5 rounded-xl transition-all ${
-              added
-                ? "bg-[var(--color-success)] text-white"
-                : "btn-primary"
+            className={`gap-1.5 rounded-xl text-xs transition-all ${
+              justAdded
+                ? "bg-emerald-800 text-white border-emerald-800"
+                : "hover:bg-amber-950 hover:text-white hover:border-amber-950"
             }`}
-            aria-label={`افزودن ${product.name} به سبد خرید`}
           >
-            {added ? (
+            {justAdded ? (
               <>
-                <Check className="w-4 h-4" />
-                <span>اضافه شد</span>
+                <Check className="w-3.5 h-3.5" />
+                <span>ثبت شد</span>
+              </>
+            ) : inCartQty > 0 ? (
+              <>
+                <ShoppingBag className="w-3.5 h-3.5" />
+                <span>({toPersianDigits(inCartQty)})</span>
               </>
             ) : (
               <>
-                <ShoppingBag className="w-4 h-4" />
-                <span>به سبد خرید</span>
+                <ShoppingBag className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">افزودن</span>
               </>
             )}
-          </button>
+          </Button>
         </div>
       </div>
     </article>

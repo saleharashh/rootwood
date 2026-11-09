@@ -1,9 +1,25 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "wouter";
-import { ArrowLeft, Sparkles, Hammer, ShieldCheck, TreePine, Award } from "lucide-react";
-import { api, Category, Product, BlogPost } from "@/lib/api";
+import {
+  ArrowLeft,
+  Sparkles,
+  Hammer,
+  ShieldCheck,
+  Trees,
+  Award,
+  Flame,
+  CheckCircle2,
+  Calendar,
+  Clock,
+  ArrowUpRight,
+  Leaf,
+  Layers,
+} from "lucide-react";
+import { api, type Category, type Product, type BlogPost } from "@/lib/api";
 import { ProductCard } from "@/components/product-card";
-import { formatDate } from "@/lib/price";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { formatJalaliDate, toPersianDigits } from "@/lib/price";
 
 export function Home() {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -14,14 +30,14 @@ export function Home() {
   useEffect(() => {
     async function loadData() {
       try {
-        const [cats, prods, posts] = await Promise.all([
-          api<Category[]>("/catalog/categories").catch(() => []),
-          api<{ items: Product[] }>("/catalog/products?featured=true&limit=6").catch(() => ({ items: [] })),
-          api<{ items: BlogPost[] }>("/blog/posts?limit=3").catch(() => ({ items: [] })),
+        const [catRes, prodRes, postRes] = await Promise.all([
+          api.getCategories().catch(() => ({ categories: [] })),
+          api.getProducts({ featured: true, limit: 6 }).catch(() => ({ items: [] })),
+          api.getBlogPosts({ limit: 3 }).catch(() => ({ posts: [] })),
         ]);
-        setCategories(cats);
-        setFeaturedProducts(prods.items || []);
-        setRecentPosts(posts.items || []);
+        setCategories(catRes.categories || []);
+        setFeaturedProducts(prodRes.items || []);
+        setRecentPosts(postRes.posts || []);
       } finally {
         setLoading(false);
       }
@@ -30,83 +46,134 @@ export function Home() {
   }, []);
 
   return (
-    <div className="space-y-20">
-      {/* Hero Section */}
+    <div className="space-y-24 pb-24 bg-[#fcfbf9]">
+      {/* ========================================================================= */}
+      {/* 1. HERO SHOWCASE SECTION                                                  */}
+      {/* ========================================================================= */}
       <section className="relative px-4 pt-6 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
-          <div className="relative overflow-hidden rounded-3xl border border-[var(--color-border)] bg-[var(--color-surface-2)] px-6 py-16 sm:px-12 sm:py-24 lg:py-28 shadow-sm">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-              <div className="space-y-6">
-                <span className="inline-flex items-center gap-2 rounded-full bg-white border border-[var(--color-border)] px-3.5 py-1.5 text-xs font-bold text-[var(--color-accent-strong)] shadow-2xs">
-                  <Sparkles className="w-3.5 h-3.5 text-[var(--color-accent)]" />
-                  کارگاه تخصصی نجاری و مبلمان دست‌ساز
-                </span>
+          <div className="relative overflow-hidden rounded-[2.5rem] border border-stone-200/90 bg-gradient-to-bl from-amber-50/70 via-[#f9f6f0] to-[#f4eee6] px-6 py-16 sm:px-12 sm:py-20 lg:py-24 shadow-card">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+              {/* Text column - 7 cols */}
+              <div className="lg:col-span-7 space-y-6">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge variant="wood" className="px-3.5 py-1 text-xs gap-1.5 shadow-2xs">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-800" />
+                    <span>آتلیه و کارگاه تخصصی نجاری دست‌ساز</span>
+                  </Badge>
+                  <span className="text-xs font-semibold text-stone-500">
+                    تولید اصیل از سال ۱۳۹۴
+                  </span>
+                </div>
 
-                <h1 className="text-3xl font-black text-[var(--color-wood)] sm:text-5xl lg:text-6xl tracking-tight leading-tight">
-                  مبلمانی که جای خودش را در خانه باز می‌کند.
+                <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black font-serif text-stone-900 tracking-tight leading-[1.18]">
+                  مبلمانی که با روح چوب‌های کهنسال نفس می‌کشد.
                 </h1>
 
-                <p className="text-base sm:text-lg leading-relaxed text-[var(--color-ink-soft)] max-w-xl">
-                  میز، نشیمن، کتابخانه و دکور از چوب‌های اصیل: بلوط کهنسال، گردوی تیره‌رنگ، گیلاس و توت ایرانی — پرداخت‌شده با دست با روغن گیاهی، ساخته‌شده برای یک عمر زندگی.
+                <p className="text-sm sm:text-base leading-relaxed text-stone-600 max-w-xl font-light">
+                  میزهای اسلب، نشیمن ارگونومیک، کتابخانه‌های روستیک و ظروف خراطی از چوب‌های اصیل گردو، بلوط، راش و چنار ایران — پرداخت‌شده با روغن‌های گیاهی ارگانیک برای دهه‌ها ماندگاری.
                 </p>
 
+                {/* CTA Buttons */}
                 <div className="flex flex-wrap items-center gap-3.5 pt-2">
-                  <Link href="/products" className="btn btn-primary px-6 py-3.5 text-sm font-bold shadow-xs">
-                    <span>مشاهده محصولات کارگاه</span>
-                    <ArrowLeft className="w-4 h-4" />
+                  <Link href="/products">
+                    <Button variant="default" size="lg" className="gap-2.5 shadow-md">
+                      <span>مشاهده کاتالوگ آثار</span>
+                      <ArrowLeft className="w-4 h-4" />
+                    </Button>
                   </Link>
-                  <Link href="/contact" className="btn btn-ghost px-6 py-3.5 text-sm font-bold bg-white">
-                    سفارش ابعاد اختصاصی
+
+                  <Link href="/products?featured=true">
+                    <Button variant="outline" size="lg" className="gap-2 border-stone-300">
+                      <Flame className="w-4 h-4 text-amber-800" />
+                      <span>پرفروش‌ترین دست‌سازه‌ها</span>
+                    </Button>
                   </Link>
+                </div>
+
+                {/* Atelier Trust Bulletpoints */}
+                <div className="pt-6 border-t border-stone-200/80 grid grid-cols-2 sm:grid-cols-3 gap-4 text-xs text-stone-600">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-amber-900 shrink-0" />
+                    <span>چوب ۱۰۰٪ طبیعی بدون ام‌دی‌اف</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-amber-900 shrink-0" />
+                    <span>اتصالات کام و زبانه دست‌ساز</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-amber-900 shrink-0" />
+                    <span>گارانتی ۲ ساله اصالت اثر</span>
+                  </div>
                 </div>
               </div>
 
-              {/* Hero Image */}
-              <div className="relative aspect-4/3 overflow-hidden rounded-2xl shadow-elevated border border-[var(--color-border)]">
-                <img
-                  src="/images/oak-dining-table.webp"
-                  alt="میز ناهارخوری بلوط ایرانی در دکوراسیون داخلی"
-                  className="h-full w-full object-cover"
-                />
+              {/* Hero Image - 5 cols */}
+              <div className="lg:col-span-5 relative">
+                <div className="relative aspect-4/3 sm:aspect-5/4 overflow-hidden rounded-3xl shadow-xl border border-stone-300/80 bg-stone-200">
+                  <img
+                    src="/images/oak-dining-table.webp"
+                    alt="میز ناهارخوری بلوط ایرانی دست‌ساز روت‌وود"
+                    className="h-full w-full object-cover hover:scale-105 transition-transform duration-700"
+                  />
+                  {/* Floating Spec Tag on Image */}
+                  <div className="absolute bottom-4 right-4 bg-white/95 backdrop-blur-md p-3 rounded-2xl border border-stone-200 shadow-md">
+                    <div className="text-xs font-bold text-stone-900 font-serif">میز اسلب بلوط جنگلی</div>
+                    <div className="text-[11px] text-amber-900 font-semibold mt-0.5">اتصال دم‌چلچله‌ای با فینیش روغن بزرک</div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Categories Row */}
+      {/* ========================================================================= */}
+      {/* 2. CATEGORIES VISUAL SHOWCASE                                            */}
+      {/* ========================================================================= */}
       {categories.length > 0 && (
         <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <span className="text-xs font-bold text-[var(--color-accent-strong)] uppercase tracking-wider">
-                دسته‌بندی‌های کارگاه
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-10">
+            <div className="space-y-1">
+              <span className="text-xs font-bold text-amber-900 uppercase tracking-widest block">
+                مجموعه‌های تخصصی
               </span>
-              <h2 className="text-2xl font-bold text-[var(--color-wood)] mt-1">
-                مجموعه کارهای دست‌ساز
+              <h2 className="text-2xl sm:text-3xl font-bold font-serif text-stone-900">
+                دسته‌بندی‌های چوب و دکوراسیون
               </h2>
             </div>
-            <Link href="/products" className="text-xs font-bold text-[var(--color-accent)] hover:underline flex items-center gap-1">
-              <span>مشاهده همه</span>
-              <ArrowLeft className="w-3.5 h-3.5" />
+            <Link href="/products">
+              <Button variant="ghost" size="sm" className="gap-1 text-amber-950 font-semibold self-start sm:self-auto">
+                <span>مشاهده تمامی دسته‌ها</span>
+                <ArrowLeft className="w-4 h-4" />
+              </Button>
             </Link>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {categories.map((cat) => (
               <Link
                 key={cat.id}
                 href={`/products?category=${cat.slug}`}
-                className="group flex flex-col p-5 rounded-2xl border border-[var(--color-border)] bg-white hover:border-[var(--color-accent)] hover:shadow-card transition-all"
+                className="group relative flex flex-col justify-between p-6 rounded-3xl border border-stone-200/90 bg-white shadow-2xs hover:shadow-card hover:border-amber-900/40 transition-all duration-300"
               >
-                <div className="text-base font-bold text-[var(--color-wood)] group-hover:text-[var(--color-accent)]">
-                  {cat.name}
+                <div className="space-y-2">
+                  <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-950 flex items-center justify-center font-bold mb-4 group-hover:bg-amber-950 group-hover:text-amber-50 transition-colors">
+                    <Layers className="w-6 h-6" />
+                  </div>
+                  <h3 className="text-lg font-bold font-serif text-stone-900 group-hover:text-amber-950 transition-colors">
+                    {cat.name}
+                  </h3>
+                  <p className="text-xs text-stone-500 line-clamp-2 leading-relaxed">
+                    {cat.description || "آثار دست‌ساز اصیل ساخته‌شده با ظرافت استادکاران کارگاه"}
+                  </p>
                 </div>
-                <div className="text-xs text-[var(--color-ink-mute)] mt-1 line-clamp-1">
-                  {cat.description || "آثار دست‌ساز کارگاه"}
-                </div>
-                <div className="mt-4 text-[11px] font-bold text-[var(--color-accent-strong)]">
-                  {cat.productCount} اثر فعال ←
+
+                <div className="pt-6 mt-4 border-t border-stone-100 flex items-center justify-between text-xs font-bold text-amber-900">
+                  <span>
+                    {cat.productCount ? `${toPersianDigits(cat.productCount)} اثر فعال` : "مشاهده آثار"}
+                  </span>
+                  <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-1 transition-transform" />
                 </div>
               </Link>
             ))}
@@ -114,27 +181,32 @@ export function Home() {
         </section>
       )}
 
-      {/* Featured Pieces */}
+      {/* ========================================================================= */}
+      {/* 3. FEATURED & BESTSELLING PIECES                                          */}
+      {/* ========================================================================= */}
       <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <span className="text-xs font-bold text-[var(--color-accent-strong)] uppercase tracking-wider">
-              منتخب کارگاه
-            </span>
-            <h2 className="text-2xl font-bold text-[var(--color-wood)] mt-1">
-              پرفروش‌ترین قطعه‌های دست‌ساز
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-10">
+          <div className="space-y-1">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-amber-900 uppercase tracking-widest">
+              <Flame className="w-4 h-4 text-amber-700" />
+              <span>شاهکارهای برگزیده</span>
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-bold font-serif text-stone-900">
+              پرفروش‌ترین آثار کارگاه روت‌وود
             </h2>
           </div>
-          <Link href="/products?featured=true" className="text-xs font-bold text-[var(--color-accent)] hover:underline flex items-center gap-1">
-            <span>تمام پرفروش‌ها</span>
-            <ArrowLeft className="w-3.5 h-3.5" />
+          <Link href="/products?featured=true">
+            <Button variant="outline" size="sm" className="gap-1.5 border-stone-300">
+              <span>مشاهده تمام پرفروش‌ها</span>
+              <ArrowLeft className="w-4 h-4" />
+            </Button>
           </Link>
         </div>
 
         {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {[1, 2, 3].map((n) => (
-              <div key={n} className="h-80 rounded-3xl bg-[var(--color-surface-2)] animate-pulse" />
+              <div key={n} className="h-96 rounded-3xl bg-stone-200/60 animate-pulse border border-stone-200" />
             ))}
           </div>
         ) : (
@@ -146,86 +218,150 @@ export function Home() {
         )}
       </section>
 
-      {/* Workshop Craft Story */}
+      {/* ========================================================================= */}
+      {/* 4. WORKSHOP PHILOSOPHY & CRAFTSMANSHIP JOURNEY                           */}
+      {/* ========================================================================= */}
       <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="rounded-3xl border border-[var(--color-border)] bg-[var(--color-surface-2)] p-8 sm:p-14">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
-            <div className="space-y-4">
-              <span className="text-xs font-bold text-[var(--color-accent-strong)] uppercase tracking-wider">
-                اصالت متریال و اتصالات سنتی
+        <div className="rounded-[2.5rem] border border-stone-200/90 bg-[#241711] text-[#fcfaf7] p-8 sm:p-14 lg:p-16 shadow-xl relative overflow-hidden">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+            <div className="lg:col-span-7 space-y-6">
+              <span className="text-xs font-bold text-amber-400 uppercase tracking-widest flex items-center gap-1.5">
+                <Trees className="w-4 h-4" />
+                <span>فرآیند خلق در کارگاه روت‌وود</span>
               </span>
-              <h2 className="text-2xl sm:text-3xl font-bold text-[var(--color-wood)]">
-                احترام به بافت زنده چوب، بدون روکش‌های مصنوعی
+
+              <h2 className="text-2xl sm:text-4xl font-extrabold font-serif leading-tight">
+                هر تکه چوب، راوی داستانی از دهه‌ها زندگی و باران است.
               </h2>
-              <p className="text-sm leading-relaxed text-[var(--color-ink-soft)]">
-                ما باور داریم مبلمان بخشی از زندگی روزمره است که احساس گرما و آرامش را به خانه می‌آورد. به همین دلیل در روت‌وود گروپ از هیچ‌گونه ام‌دی‌اف، روکش ملامینه یا چسب‌های سمی شیمیایی استفاده نمی‌شود.
+
+              <p className="text-xs sm:text-sm leading-relaxed text-stone-300 font-light">
+                در آتلیه روت‌وود، ما به جای تولید ماشینی انبوه، تک‌تک الوارهای کهنسال را بر اساس نقش رگه‌ها و گره‌های طبیعی انتخاب می‌کنیم. هیچ‌گونه روکش ام‌دی‌اف یا لایه‌های پلاستیکی استفاده نمی‌شود تا عطر طبیعی گردو و بلوط همیشه در خانه شما جریان داشته باشد.
               </p>
-              <div className="grid grid-cols-2 gap-4 pt-4">
-                <div className="p-4 rounded-2xl bg-white border border-[var(--color-border)]">
-                  <TreePine className="w-6 h-6 text-[var(--color-accent)] mb-2" />
-                  <div className="font-bold text-xs text-[var(--color-wood)]">چوب‌های پایدار</div>
-                  <div className="text-[11px] text-[var(--color-ink-mute)] mt-1">تأمین اصولی از باغات کهنسال</div>
+
+              {/* 4 Pillars Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                <div className="p-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xs space-y-1.5">
+                  <Leaf className="w-5 h-5 text-amber-400" />
+                  <div className="font-bold text-sm text-stone-100 font-serif">روغن گیاهی ارگانیک</div>
+                  <div className="text-[11px] text-stone-400 leading-relaxed">
+                    پوشش طبیعی بدون مواد شیمیایی فرار (Zero VOC) مناسب ظروف غذاخوری و اتاق کودک.
+                  </div>
                 </div>
-                <div className="p-4 rounded-2xl bg-white border border-[var(--color-border)]">
-                  <Award className="w-6 h-6 text-[var(--color-accent)] mb-2" />
-                  <div className="font-bold text-xs text-[var(--color-wood)]">ضمانت مادام‌العمر</div>
-                  <div className="text-[11px] text-[var(--color-ink-mute)] mt-1">استحکام ساختاری و اتصالات</div>
+
+                <div className="p-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xs space-y-1.5">
+                  <ShieldCheck className="w-5 h-5 text-amber-400" />
+                  <div className="font-bold text-sm text-stone-100 font-serif">ضمانت اصالت و سلامت</div>
+                  <div className="text-[11px] text-stone-400 leading-relaxed">
+                    صدور شناسنامه کتبی چوب همراه با تضمین عدم تابیدگی اتصالات تا ۲ سال.
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div className="aspect-4/3 overflow-hidden rounded-2xl border border-[var(--color-border)] shadow-md">
-              <img
-                src="/images/workshop.webp"
-                alt="کارگاه نجاری روت‌وود گروپ"
-                className="w-full h-full object-cover"
-              />
+            <div className="lg:col-span-5">
+              <div className="aspect-4/3 overflow-hidden rounded-3xl border border-white/15 shadow-2xl">
+                <img
+                  src="/images/workshop.webp"
+                  alt="کارگاه نجاری و هنر چوب روت‌وود"
+                  className="w-full h-full object-cover"
+                />
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Latest Articles */}
+      {/* ========================================================================= */}
+      {/* 5. BESPOKE COMMISSION CALLOUT BANNER                                      */}
+      {/* ========================================================================= */}
+      <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="rounded-3xl border border-amber-900/20 bg-gradient-to-r from-amber-50 via-amber-100/50 to-amber-50 p-8 sm:p-12 flex flex-col md:flex-row items-center justify-between gap-6 shadow-2xs">
+          <div className="space-y-2 text-center md:text-right">
+            <span className="text-xs font-bold text-amber-900 uppercase tracking-widest block">
+              سفارش‌های ساخت اختصاصی
+            </span>
+            <h3 className="text-xl sm:text-2xl font-bold font-serif text-stone-900">
+              آیا ابعاد خاص یا گونه چوب مشخصی برای منزلتان مد نظر دارید؟
+            </h3>
+            <p className="text-xs sm:text-sm text-stone-600 max-w-xl leading-relaxed">
+              استادکاران روت‌وود آماده طراحی سه‌بعدی و ساخت سفارشی میز، کنسول، دراور و اکسسوری متناسب با معماری فضای شما هستند.
+            </p>
+          </div>
+
+          <Link href="/contact">
+            <Button variant="wood" size="lg" className="shrink-0 gap-2 font-bold shadow-md">
+              <Hammer className="w-4 h-4 text-amber-400" />
+              <span>ثبت سفارش اختصاصی و مشاوره</span>
+            </Button>
+          </Link>
+        </div>
+      </section>
+
+      {/* ========================================================================= */}
+      {/* 6. JOURNAL ARTICLES & CARE GUIDES                                        */}
+      {/* ========================================================================= */}
       {recentPosts.length > 0 && (
         <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <span className="text-xs font-bold text-[var(--color-accent-strong)] uppercase tracking-wider">
-                مجله کارگاه
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-10">
+            <div className="space-y-1">
+              <span className="text-xs font-bold text-amber-900 uppercase tracking-widest block">
+                مجله و دانشنامه چوب
               </span>
-              <h2 className="text-2xl font-bold text-[var(--color-wood)] mt-1">
-                یادداشت‌ها و آموزش‌های مراقبت از چوب
+              <h2 className="text-2xl sm:text-3xl font-bold font-serif text-stone-900">
+                راهنماهای مراقبت و رازهای نجاری اصیل
               </h2>
             </div>
-            <Link href="/blog" className="text-xs font-bold text-[var(--color-accent)] hover:underline flex items-center gap-1">
-              <span>تمام مقالات</span>
-              <ArrowLeft className="w-3.5 h-3.5" />
+            <Link href="/blog">
+              <Button variant="ghost" size="sm" className="gap-1 text-amber-950 font-semibold">
+                <span>مشاهده تمام مقالات</span>
+                <ArrowLeft className="w-4 h-4" />
+              </Button>
             </Link>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {recentPosts.map((post) => (
-              <article key={post.id} className="group rounded-3xl border border-[var(--color-border)] bg-white p-4 shadow-2xs hover:shadow-card transition-all">
-                {post.coverImage && (
-                  <div className="aspect-16/10 overflow-hidden rounded-2xl mb-4 bg-[var(--color-surface-2)]">
-                    <img
-                      src={post.coverImage}
-                      alt={post.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
+              <article
+                key={post.id}
+                className="group flex flex-col justify-between rounded-3xl border border-stone-200/90 bg-white p-5 shadow-2xs hover:shadow-card hover:border-amber-900/30 transition-all duration-300"
+              >
+                <Link
+                  href={`/blog/${post.slug}`}
+                  className="aspect-16/10 overflow-hidden rounded-2xl bg-stone-100 mb-4 block"
+                >
+                  <img
+                    src={post.coverImage || "/images/workshop.webp"}
+                    alt={post.title}
+                    className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                </Link>
+
+                <div className="flex-1 space-y-2">
+                  <div className="flex items-center gap-3 text-xs text-stone-500">
+                    <span className="flex items-center gap-1">
+                      <Calendar className="w-3.5 h-3.5" />
+                      {formatJalaliDate(post.publishedAt || post.createdAt)}
+                    </span>
+                    <span>•</span>
+                    <span className="flex items-center gap-1">
+                      <Clock className="w-3.5 h-3.5" />
+                      {toPersianDigits(post.readingTimeMinutes || 5)} دقیقه
+                    </span>
                   </div>
-                )}
-                <div className="flex items-center gap-2 text-[11px] text-[var(--color-ink-mute)] mb-2">
-                  <span>{formatDate(post.createdAt)}</span>
-                  <span>•</span>
-                  <span>{post.tags[0] || "آموزش"}</span>
+
+                  <h3 className="text-base font-bold font-serif text-stone-900 group-hover:text-amber-950 transition-colors line-clamp-2 leading-snug">
+                    <Link href={`/blog/${post.slug}`}>{post.title}</Link>
+                  </h3>
+
+                  <p className="text-xs text-stone-500 line-clamp-2 leading-relaxed">
+                    {post.excerpt}
+                  </p>
                 </div>
-                <h3 className="font-bold text-base text-[var(--color-wood)] group-hover:text-[var(--color-accent)] line-clamp-2">
-                  <Link href={`/blog/${post.slug}`}>{post.title}</Link>
-                </h3>
-                <p className="text-xs text-[var(--color-ink-soft)] mt-2 line-clamp-2">
-                  {post.excerpt}
-                </p>
+
+                <div className="pt-4 mt-4 border-t border-stone-100 flex items-center justify-between text-xs font-bold text-amber-900">
+                  <span>مطالعه مقاله</span>
+                  <ArrowUpRight className="w-4 h-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                </div>
               </article>
             ))}
           </div>
