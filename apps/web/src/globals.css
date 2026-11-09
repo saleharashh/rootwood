@@ -1,27 +1,51 @@
 @import "tailwindcss";
 
 @theme inline {
-  --color-bg: #fcfaf7;
+  /* ------------------------------------------------------------------------- */
+  /* 60-30-10 PALETTE ARCHITECTURE                                             */
+  /* ------------------------------------------------------------------------- */
+  /* 60% DOMINANT (Base, Canvas & Clean Surfaces)                              */
+  --color-canvas: #faf8f5;
+  --color-canvas-subtle: #f4ece4;
   --color-surface: #ffffff;
-  --color-surface-2: #f8ede2;
-  --color-border: #eddcd0;
-  --color-border-strong: #dbc5b4;
-  --color-ink: #2e1e16;
-  --color-ink-soft: #5c4436;
-  --color-ink-mute: #876f61;
-  --color-accent: #8c4f27;
-  --color-accent-strong: #78401d;
-  --color-accent-soft: #f8ede2;
+  --color-surface-subtle: #fbf9f6;
+
+  /* 30% SECONDARY (Structure, Deep Timber Typography, Borders & Muted Fills)   */
+  --color-ink: #2b1e17;
+  --color-ink-secondary: #655347;
+  --color-ink-muted: #8c796e;
+  --color-border: #e8ded3;
+  --color-border-subtle: #f0e7dd;
+  --color-border-strong: #d5c4b3;
+  --color-wood-deep: #54311c;
+  --color-wood-secondary: #f2e7dc;
+
+  /* 10% ACCENT (Focal Points, CTAs, Conversions & Active States)              */
+  --color-accent: #b85d19;
+  --color-accent-hover: #9e4e13;
+  --color-accent-active: #87400d;
+  --color-accent-soft: #fdf1e7;
+  --color-accent-border: #edd1bc;
+
+  /* Feedback Semantics */
   --color-success: #2d6124;
   --color-error: #a82e1e;
-  --color-wood: #78401d;
-  --color-wood-light: #a35c2f;
+
+  /* Backward Compatibility Aliases */
+  --color-bg: #faf8f5;
+  --color-surface-2: #f4ece4;
+  --color-ink-soft: #655347;
+  --color-ink-mute: #8c796e;
+  --color-wood: #2b1e17;
+  --color-wood-light: #b85d19;
+  --color-accent-strong: #9e4e13;
 
   --font-sans: "Vazirmatn", system-ui, -apple-system, "Segoe UI", Roboto, Tahoma, sans-serif;
+  --font-serif: "Vazirmatn", Georgia, serif;
 
-  --shadow-card: 0 1px 3px rgba(20, 17, 14, 0.04), 0 6px 18px rgba(20, 17, 14, 0.04);
-  --shadow-elevated: 0 3px 8px rgba(20, 17, 14, 0.06), 0 16px 36px rgba(20, 17, 14, 0.08);
-  --shadow-focus: 0 0 0 3px rgba(140, 79, 39, 0.22);
+  --shadow-card: 0 1px 3px rgba(43, 30, 23, 0.04), 0 6px 18px rgba(43, 30, 23, 0.03);
+  --shadow-elevated: 0 4px 12px rgba(43, 30, 23, 0.06), 0 20px 40px rgba(43, 30, 23, 0.08);
+  --shadow-focus: 0 0 0 3px rgba(184, 93, 25, 0.22);
 }
 
 :root {

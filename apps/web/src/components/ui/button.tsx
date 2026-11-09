@@ -3,26 +3,30 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-900/40 disabled:pointer-events-none disabled:opacity-50 select-none active:scale-[0.98]",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b85d19]/40 disabled:pointer-events-none disabled:opacity-50 select-none active:scale-[0.98]",
   {
     variants: {
       variant: {
+        /* 10% Accent CTA */
         default:
-          "bg-[#8c4f27] text-white shadow-xs hover:bg-[#78401d] hover:shadow-sm",
+          "bg-[#b85d19] text-white shadow-xs hover:bg-[#9e4e13] hover:shadow-sm active:bg-[#87400d]",
+        /* 30% Structural Deep Timber */
         wood:
-          "bg-[#78401d] text-[#fcfaf7] shadow-xs hover:bg-[#633316] border border-[#93532a]/20",
+          "bg-[#54311c] text-[#faf8f5] shadow-xs hover:bg-[#432615] border border-[#784725]/30",
         destructive:
           "bg-red-700 text-white shadow-xs hover:bg-red-800",
+        /* 30% Structural Outline */
         outline:
-          "border border-[#e2d5c7] bg-white/90 text-[#3b2214] shadow-2xs hover:bg-[#fbf4ec] hover:border-[#8c4f27]/50 hover:text-[#78401d]",
+          "border border-[#e8ded3] bg-white text-[#2b1e17] shadow-2xs hover:bg-[#fdf1e7] hover:border-[#b85d19]/50 hover:text-[#b85d19]",
+        /* 30% Structural Secondary Muted */
         secondary:
-          "bg-[#f5ecdf] text-[#4a2c1b] shadow-2xs hover:bg-[#ede1d0]",
+          "bg-[#f2e7dc] text-[#2b1e17] shadow-2xs hover:bg-[#e8dbce]",
         ghost:
-          "text-[#543c2f] hover:bg-[#f5ecdf]/80 hover:text-[#2a1c14]",
+          "text-[#655347] hover:bg-[#f2e7dc]/70 hover:text-[#2b1e17]",
         link:
-          "text-[#8c4f27] underline-offset-4 hover:underline p-0 h-auto font-medium",
+          "text-[#b85d19] underline-offset-4 hover:underline p-0 h-auto font-medium",
         gold:
-          "bg-gradient-to-r from-[#9c5d31] via-[#b87333] to-[#8c4f27] text-white shadow-xs hover:brightness-105",
+          "bg-gradient-to-r from-[#b85d19] via-[#c96e28] to-[#b85d19] text-white shadow-xs hover:brightness-105",
       },
       size: {
         default: "h-10 px-4 py-2",

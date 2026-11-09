@@ -101,24 +101,24 @@ export function About() {
           </div>
         </div>
 
-        {/* Call to action */}
-        <div className="bg-gradient-to-br from-[#78401d] via-[#8c4f27] to-[#633316] text-[#fcfaf7] rounded-3xl p-8 sm:p-12 text-center space-y-5 shadow-lg">
-          <h2 className="text-2xl sm:text-3xl font-extrabold font-serif text-white">
+        {/* Call to action (60% Crisp White Canvas / 30% Text / 10% Accent CTA) */}
+        <div className="border border-[#e8ded3] bg-white rounded-3xl p-8 sm:p-12 text-center space-y-5 shadow-card">
+          <h2 className="text-2xl sm:text-3xl font-extrabold font-serif text-[#2b1e17]">
             دست‌سازه‌ای خاص برای معماری خانه شما
           </h2>
-          <p className="text-xs sm:text-sm text-[#fbf4ec]/90 max-w-xl mx-auto leading-relaxed">
+          <p className="text-xs sm:text-sm text-[#655347] max-w-xl mx-auto leading-relaxed">
             آیا ابعاد خاص، گونه چوب مشخص یا طراحی متفاوتی در ذهن دارید؟ ما در آتلیه آماده طراحی سه‌بعدی و ساخت اختصاصی آن برای شما هستیم.
           </p>
           <div className="flex flex-wrap justify-center gap-3 pt-2">
             <Link
               href="/contact"
-              className="bg-white hover:bg-[#fbf4ec] text-[#78401d] text-xs sm:text-sm font-bold px-6 py-3 rounded-xl transition shadow-xs"
+              className="bg-[#b85d19] hover:bg-[#9e4e13] text-white text-xs sm:text-sm font-bold px-6 py-3 rounded-xl transition shadow-xs"
             >
               ثبت سفارش اختصاصی و مشاوره
             </Link>
             <Link
               href="/products"
-              className="bg-black/20 hover:bg-black/30 text-white text-xs sm:text-sm font-semibold px-6 py-3 rounded-xl border border-white/20 transition"
+              className="bg-[#f2e7dc] hover:bg-[#e8dbce] text-[#2b1e17] text-xs sm:text-sm font-semibold px-6 py-3 rounded-xl border border-[#e8ded3] transition"
             >
               مشاهده محصولات کارگاه
             </Link>

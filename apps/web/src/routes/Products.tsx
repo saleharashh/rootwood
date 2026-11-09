@@ -242,10 +242,10 @@ export function Products() {
               onClick={() => setMobileFilterOpen(true)}
               className="lg:hidden gap-2 border-stone-200/90 text-stone-700"
             >
-              <SlidersHorizontal className="w-4 h-4 text-[#8c4f27]" />
+              <SlidersHorizontal className="w-4 h-4 text-[#b85d19]" />
               <span>فیلترها</span>
               {activeFiltersCount > 0 && (
-                <span className="bg-[#8c4f27] text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold">
+                <span className="bg-[#b85d19] text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold">
                   {toPersianDigits(activeFiltersCount)}
                 </span>
               )}
@@ -273,9 +273,9 @@ export function Products() {
 
         {/* Active Filter Pills Bar (Chips) */}
         {activeFiltersCount > 0 && (
-          <div className="flex flex-wrap items-center gap-2 p-3 bg-[#f8ede2]/50 rounded-2xl border border-[#eddcd0] text-xs animate-in fade-in duration-200">
-            <span className="font-semibold text-[#8c4f27] flex items-center gap-1.5 shrink-0">
-              <Tag className="w-3.5 h-3.5 text-[#8c4f27]" />
+          <div className="flex flex-wrap items-center gap-2 p-3 bg-[#fdf1e7] rounded-2xl border border-[#edd1bc] text-xs animate-in fade-in duration-200">
+            <span className="font-semibold text-[#b85d19] flex items-center gap-1.5 shrink-0">
+              <Tag className="w-3.5 h-3.5 text-[#b85d19]" />
               فیلترهای اعمال‌شده:
             </span>
 
@@ -479,8 +479,8 @@ export function Products() {
                       }}
                       className={`text-right px-3 py-2 rounded-xl text-xs font-medium transition-colors flex items-center justify-between ${
                         priceRange === p.id
-                          ? "bg-[#8c4f27] text-white font-bold shadow-2xs"
-                          : "text-stone-700 hover:bg-stone-100"
+                          ? "bg-[#b85d19] text-white font-bold shadow-2xs"
+                          : "text-stone-700 hover:bg-[#fdf1e7]/60"
                       }`}
                     >
                       <span>{p.label}</span>
@@ -585,8 +585,8 @@ export function Products() {
                         onClick={() => setPage(pNum)}
                         className={`w-9 h-9 rounded-xl text-xs font-bold transition-all ${
                           isCurrent
-                            ? "bg-[#8c4f27] text-white shadow-2xs"
-                            : "bg-white text-stone-700 hover:bg-[#f8ede2]/60 border border-stone-200"
+                            ? "bg-[#b85d19] text-white shadow-2xs"
+                            : "bg-white text-stone-700 hover:bg-[#fdf1e7]/60 border border-[#e8ded3]"
                         }`}
                       >
                         {toPersianDigits(pNum)}
@@ -708,8 +708,8 @@ export function Products() {
                   }}
                   className={`text-right px-3 py-2 rounded-xl text-xs font-medium transition-colors flex items-center justify-between ${
                     priceRange === p.id
-                      ? "bg-[#8c4f27] text-white font-bold shadow-2xs"
-                      : "text-stone-700 hover:bg-[#f8ede2]/60"
+                      ? "bg-[#b85d19] text-white font-bold shadow-2xs"
+                      : "text-stone-700 hover:bg-[#fdf1e7]/60"
                   }`}
                 >
                   <span>{p.label}</span>

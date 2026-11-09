@@ -367,7 +367,7 @@ export function Admin() {
                         <div className="text-stone-400 text-xs">{o.phone}</div>
                       </td>
                       <td className="p-3 text-stone-500">{formatJalaliDate(o.createdAt)}</td>
-                      <td className="p-3 font-bold text-[#8c4f27] font-serif">
+                      <td className="p-3 font-bold text-[#b85d19] font-serif">
                         {formatPriceToman(o.totalAmount)}
                       </td>
                       <td className="p-3">

@@ -74,12 +74,12 @@ export function SiteFooter() {
           {/* Brand Info */}
           <div className="md:col-span-2 space-y-4">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--color-wood)] text-white font-bold text-xs">
-                CR
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#b85d19] text-white font-bold text-sm font-serif">
+                RW
               </div>
               <div>
-                <span className="text-base font-black text-[var(--color-wood)]">
-                  Rootwood Group · روت‌وود گروپ
+                <span className="text-base font-black text-[#2b1e17] font-serif">
+                  Rootwood Group · روت‌وود
                 </span>
                 <p className="text-xs text-[var(--color-ink-mute)]">
                   کارگاه طراحی و ساخت مبلمان دست‌ساز

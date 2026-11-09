@@ -50,10 +50,10 @@ export function SiteHeader() {
   const isProductsActive = location.startsWith("/products") && !isBestsellerActive;
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-[#eddcd0]/90 bg-[#fcfaf7]/95 backdrop-blur-md transition-all">
-      {/* Top Banner Notice - Warm subtle beige strip */}
-      <div className="bg-[#f8ede2] text-[#78401d] border-b border-[#eddcd0]/80 text-[11px] py-1 px-4 text-center font-medium flex items-center justify-center gap-2">
-        <Sparkles className="w-3.5 h-3.5 text-[#8c4f27] shrink-0" />
+    <header className="sticky top-0 z-40 w-full border-b border-[#e8ded3] bg-[#faf8f5]/95 backdrop-blur-md transition-all">
+      {/* Top Banner Notice (30% Secondary structure / warm linen) */}
+      <div className="bg-[#f4ece4] text-[#655347] border-b border-[#e8ded3] text-[11px] py-1 px-4 text-center font-medium flex items-center justify-center gap-2">
+        <Sparkles className="w-3.5 h-3.5 text-[#b85d19] shrink-0" />
         <span className="truncate">ارسال رایگان سفارش‌های بالای ۲۰ میلیون تومان همراه با شناسنامه اصالت چوب روت‌وود</span>
       </div>
 
@@ -64,35 +64,35 @@ export function SiteHeader() {
           <button
             type="button"
             onClick={() => setMobileDrawerOpen(true)}
-            className="md:hidden p-2 rounded-xl text-stone-700 hover:text-[#8c4f27] hover:bg-[#f8ede2] transition-colors"
+            className="md:hidden p-2 rounded-xl text-[#655347] hover:text-[#b85d19] hover:bg-[#fdf1e7] transition-colors"
             aria-label="باز کردن منوی موبایل"
           >
             <Menu className="w-5 h-5" />
           </button>
 
-          {/* Logo - Single Line, Never Wraps */}
+          {/* Logo (10% Accent Monogram + 30% Structural Title) */}
           <Link
             href="/"
-            className="flex items-center gap-2.5 text-stone-900 group focus:outline-none flex-nowrap shrink-0"
+            className="flex items-center gap-2.5 text-[#2b1e17] group focus:outline-none flex-nowrap shrink-0"
             aria-label="صفحه اصلی روت‌وود"
           >
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#8c4f27] text-white font-bold text-sm shadow-xs group-hover:bg-[#78401d] transition-colors tracking-wider font-serif shrink-0">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#b85d19] text-white font-bold text-sm shadow-xs group-hover:bg-[#9e4e13] transition-colors tracking-wider font-serif shrink-0">
               RW
             </div>
-            <span className="text-base sm:text-lg font-black tracking-tight text-stone-900 font-serif whitespace-nowrap">
+            <span className="text-base sm:text-lg font-black tracking-tight text-[#2b1e17] font-serif whitespace-nowrap">
               روت‌وود
             </span>
           </Link>
 
-          {/* Desktop Navigation Links - Compact, Single-line, No wrapping */}
+          {/* Desktop Navigation Links - Single line without wrapping */}
           <nav className="hidden md:flex items-center gap-1 lg:gap-1.5 flex-nowrap shrink-0">
             {/* 1. All Products */}
             <Link
               href="/products"
               className={`px-3 py-1.5 rounded-lg text-xs lg:text-[13px] font-medium whitespace-nowrap transition-all ${
                 isProductsActive
-                  ? "bg-[#f8ede2] text-[#8c4f27] font-bold"
-                  : "text-stone-700 hover:text-[#8c4f27] hover:bg-[#f8ede2]/60"
+                  ? "bg-[#fdf1e7] text-[#b85d19] font-bold"
+                  : "text-[#655347] hover:text-[#b85d19] hover:bg-[#fdf1e7]/60"
               }`}
             >
               محصولات
@@ -103,12 +103,12 @@ export function SiteHeader() {
               href="/products?featured=true"
               className={`px-3 py-1.5 rounded-lg text-xs lg:text-[13px] font-medium whitespace-nowrap transition-all flex items-center gap-1.5 ${
                 isBestsellerActive
-                  ? "bg-[#f8ede2] text-[#8c4f27] font-bold"
-                  : "text-stone-700 hover:text-[#8c4f27] hover:bg-[#f8ede2]/60"
+                  ? "bg-[#fdf1e7] text-[#b85d19] font-bold"
+                  : "text-[#655347] hover:text-[#b85d19] hover:bg-[#fdf1e7]/60"
               }`}
             >
               <span>پرفروش‌ها</span>
-              <span className="w-1.5 h-1.5 rounded-full bg-[#8c4f27]" />
+              <span className="w-1.5 h-1.5 rounded-full bg-[#b85d19]" />
             </Link>
 
             {/* 3. Categories Dropdown */}
@@ -117,7 +117,7 @@ export function SiteHeader() {
                 type="button"
                 onClick={() => setCategoryMenuOpen(!categoryMenuOpen)}
                 onMouseEnter={() => setCategoryMenuOpen(true)}
-                className="px-3 py-1.5 rounded-lg text-xs lg:text-[13px] font-medium text-stone-700 hover:text-[#8c4f27] hover:bg-[#f8ede2]/60 whitespace-nowrap transition-all flex items-center gap-1"
+                className="px-3 py-1.5 rounded-lg text-xs lg:text-[13px] font-medium text-[#655347] hover:text-[#b85d19] hover:bg-[#fdf1e7]/60 whitespace-nowrap transition-all flex items-center gap-1"
               >
                 <span>دسته‌بندی‌ها</span>
                 <ChevronDown className="w-3.5 h-3.5 opacity-60 group-hover:rotate-180 transition-transform duration-200" />
@@ -126,14 +126,14 @@ export function SiteHeader() {
               {/* Hover Dropdown Card */}
               <div
                 onMouseLeave={() => setCategoryMenuOpen(false)}
-                className={`absolute top-full right-0 mt-1 w-72 rounded-2xl border border-[#eddcd0] bg-white/95 backdrop-blur-md shadow-xl p-2 transition-all duration-200 z-50 ${
+                className={`absolute top-full right-0 mt-1 w-72 rounded-2xl border border-[#e8ded3] bg-white/95 backdrop-blur-md shadow-xl p-2 transition-all duration-200 z-50 ${
                   categoryMenuOpen
                     ? "opacity-100 visible translate-y-0"
                     : "opacity-0 invisible -translate-y-2 pointer-events-none"
                 }`}
               >
-                <div className="p-2 border-b border-stone-100 mb-1">
-                  <span className="text-[11px] font-bold text-stone-400 uppercase tracking-wider block">
+                <div className="p-2 border-b border-[#f0e7dd] mb-1">
+                  <span className="text-[11px] font-bold text-[#8c796e] uppercase tracking-wider block">
                     مجموعه‌های چوب طبیعی
                   </span>
                 </div>
@@ -142,21 +142,21 @@ export function SiteHeader() {
                     key={c.slug}
                     href={`/products?category=${c.slug}`}
                     onClick={() => setCategoryMenuOpen(false)}
-                    className="flex flex-col p-2.5 rounded-xl hover:bg-[#f8ede2]/70 transition-colors group/item"
+                    className="flex flex-col p-2.5 rounded-xl hover:bg-[#fdf1e7] transition-colors group/item"
                   >
-                    <span className="text-xs font-bold text-stone-900 group-hover/item:text-[#8c4f27]">
+                    <span className="text-xs font-bold text-[#2b1e17] group-hover/item:text-[#b85d19]">
                       {c.name}
                     </span>
-                    <span className="text-[11px] text-stone-500 line-clamp-1">
+                    <span className="text-[11px] text-[#655347] line-clamp-1">
                       {c.desc}
                     </span>
                   </Link>
                 ))}
-                <div className="pt-2 mt-1 border-t border-stone-100">
+                <div className="pt-2 mt-1 border-t border-[#f0e7dd]">
                   <Link
                     href="/products"
                     onClick={() => setCategoryMenuOpen(false)}
-                    className="text-center block text-xs font-bold text-[#8c4f27] hover:underline py-1"
+                    className="text-center block text-xs font-bold text-[#b85d19] hover:underline py-1"
                   >
                     مشاهده تمامی گروه‌ها ←
                   </Link>
@@ -169,8 +169,8 @@ export function SiteHeader() {
               href="/contact"
               className={`px-3 py-1.5 rounded-lg text-xs lg:text-[13px] font-medium whitespace-nowrap transition-all ${
                 location === "/contact"
-                  ? "bg-[#f8ede2] text-[#8c4f27] font-bold"
-                  : "text-stone-700 hover:text-[#8c4f27] hover:bg-[#f8ede2]/60"
+                  ? "bg-[#fdf1e7] text-[#b85d19] font-bold"
+                  : "text-[#655347] hover:text-[#b85d19] hover:bg-[#fdf1e7]/60"
               }`}
             >
               سفارش ساخت
@@ -181,8 +181,8 @@ export function SiteHeader() {
               href="/blog"
               className={`px-3 py-1.5 rounded-lg text-xs lg:text-[13px] font-medium whitespace-nowrap transition-all ${
                 location.startsWith("/blog")
-                  ? "bg-[#f8ede2] text-[#8c4f27] font-bold"
-                  : "text-stone-700 hover:text-[#8c4f27] hover:bg-[#f8ede2]/60"
+                  ? "bg-[#fdf1e7] text-[#b85d19] font-bold"
+                  : "text-[#655347] hover:text-[#b85d19] hover:bg-[#fdf1e7]/60"
               }`}
             >
               مجله
@@ -193,8 +193,8 @@ export function SiteHeader() {
               href="/about"
               className={`px-3 py-1.5 rounded-lg text-xs lg:text-[13px] font-medium whitespace-nowrap transition-all ${
                 location === "/about"
-                  ? "bg-[#f8ede2] text-[#8c4f27] font-bold"
-                  : "text-stone-700 hover:text-[#8c4f27] hover:bg-[#f8ede2]/60"
+                  ? "bg-[#fdf1e7] text-[#b85d19] font-bold"
+                  : "text-[#655347] hover:text-[#b85d19] hover:bg-[#fdf1e7]/60"
               }`}
             >
               درباره ما
@@ -204,26 +204,26 @@ export function SiteHeader() {
 
         {/* Left Section: Compact Actions (Search + Cart + Account) */}
         <div className="flex items-center gap-2 sm:gap-2.5 flex-nowrap shrink-0">
-          {/* Search Trigger Button - Icon Button */}
+          {/* Search Trigger Button - 30% Structural Icon */}
           <button
             type="button"
             onClick={openSearch}
-            className="w-9 h-9 flex items-center justify-center rounded-xl border border-[#eddcd0] bg-white text-stone-600 hover:border-[#8c4f27]/50 hover:text-[#8c4f27] hover:bg-[#f8ede2]/50 transition-colors shrink-0 shadow-2xs"
+            className="w-9 h-9 flex items-center justify-center rounded-xl border border-[#e8ded3] bg-white text-[#655347] hover:border-[#b85d19]/40 hover:text-[#b85d19] hover:bg-[#fdf1e7]/50 transition-colors shrink-0 shadow-2xs"
             aria-label="جستجوی آثار"
           >
             <Search className="w-4 h-4" />
           </button>
 
-          {/* Cart Trigger Button - Icon Button with Count Badge */}
+          {/* Cart Trigger Button - Icon Button with 10% Accent Count Badge */}
           <button
             type="button"
             onClick={openCart}
-            className="relative w-9 h-9 flex items-center justify-center rounded-xl border border-[#eddcd0] bg-white text-stone-700 hover:border-[#8c4f27]/50 hover:text-[#8c4f27] hover:bg-[#f8ede2]/50 transition-colors shrink-0 shadow-2xs"
+            className="relative w-9 h-9 flex items-center justify-center rounded-xl border border-[#e8ded3] bg-white text-[#2b1e17] hover:border-[#b85d19]/40 hover:text-[#b85d19] hover:bg-[#fdf1e7]/50 transition-colors shrink-0 shadow-2xs"
             aria-label={`سبد خرید، ${itemCount} قلم کالا`}
           >
             <ShoppingBag className="w-4 h-4" />
             {itemCount > 0 && (
-              <span className="absolute -top-1.5 -right-1.5 inline-flex items-center justify-center h-4.5 min-w-[18px] px-1 text-[10px] font-bold rounded-full bg-[#8c4f27] text-white shadow-xs">
+              <span className="absolute -top-1.5 -right-1.5 inline-flex items-center justify-center h-4.5 min-w-[18px] px-1 text-[10px] font-bold rounded-full bg-[#b85d19] text-white shadow-xs">
                 {itemCount}
               </span>
             )}
@@ -248,10 +248,10 @@ export function SiteHeader() {
               <Link href="/account">
                 <button
                   type="button"
-                  className="h-9 px-2 sm:px-2.5 flex items-center gap-1.5 rounded-xl border border-[#eddcd0] bg-white hover:border-[#8c4f27]/50 hover:bg-[#f8ede2]/50 transition-colors shrink-0 shadow-2xs text-stone-800"
+                  className="h-9 px-2 sm:px-2.5 flex items-center gap-1.5 rounded-xl border border-[#e8ded3] bg-white hover:border-[#b85d19]/40 hover:bg-[#fdf1e7]/50 transition-colors shrink-0 shadow-2xs text-[#2b1e17]"
                   aria-label={`حساب کاربری ${user.name}`}
                 >
-                  <div className="w-6 h-6 rounded-full bg-[#8c4f27] text-white flex items-center justify-center text-xs font-bold shrink-0">
+                  <div className="w-6 h-6 rounded-full bg-[#b85d19] text-white flex items-center justify-center text-xs font-bold shrink-0">
                     {user.name.charAt(0)}
                   </div>
                   <span className="max-w-[70px] truncate font-medium text-xs hidden sm:inline">
@@ -266,7 +266,7 @@ export function SiteHeader() {
               variant="default"
               size="sm"
               onClick={() => openAuth("signin")}
-              className="h-9 px-3 text-xs gap-1.5 shrink-0 whitespace-nowrap"
+              className="h-9 px-3 text-xs gap-1.5 shrink-0 whitespace-nowrap bg-[#b85d19] hover:bg-[#9e4e13]"
             >
               <UserIcon className="w-3.5 h-3.5" />
               <span>ورود / ثبت‌نام</span>
@@ -282,35 +282,35 @@ export function SiteHeader() {
         {/* Drawer Header */}
         <SheetHeader onClose={() => setMobileDrawerOpen(false)}>
           <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#8c4f27] text-white font-bold font-serif text-sm">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#b85d19] text-white font-bold font-serif text-sm">
               RW
             </div>
             <div>
-              <h2 className="text-base font-bold font-serif text-stone-900 leading-tight">روت‌وود</h2>
-              <p className="text-[11px] text-[#8c4f27] font-medium">آتلیه و نجاری دست‌ساز</p>
+              <h2 className="text-base font-bold font-serif text-[#2b1e17] leading-tight">روت‌وود</h2>
+              <p className="text-[11px] text-[#b85d19] font-medium">آتلیه و نجاری دست‌ساز</p>
             </div>
           </div>
         </SheetHeader>
 
         {/* Drawer Body Content */}
-        <div className="flex-1 overflow-y-auto p-5 space-y-6">
+        <div className="flex-1 overflow-y-auto p-5 space-y-6 bg-[#faf8f5]">
           {/* User Account Quick Card inside Drawer */}
-          <div className="bg-white p-4 rounded-2xl border border-[#eddcd0] shadow-2xs">
+          <div className="bg-white p-4 rounded-2xl border border-[#e8ded3] shadow-2xs">
             {user ? (
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full bg-[#8c4f27] text-white flex items-center justify-center font-bold text-sm">
+                  <div className="w-9 h-9 rounded-full bg-[#b85d19] text-white flex items-center justify-center font-bold text-sm">
                     {user.name.charAt(0)}
                   </div>
                   <div>
-                    <div className="text-sm font-bold text-stone-900">{user.name}</div>
-                    <div className="text-[11px] text-stone-500">{user.phone || user.email}</div>
+                    <div className="text-sm font-bold text-[#2b1e17]">{user.name}</div>
+                    <div className="text-[11px] text-[#8c796e]">{user.phone || user.email}</div>
                   </div>
                 </div>
                 <Link
                   href="/account"
                   onClick={() => setMobileDrawerOpen(false)}
-                  className="text-xs font-semibold text-[#8c4f27] bg-[#f8ede2] px-3 py-1.5 rounded-lg border border-[#eddcd0]"
+                  className="text-xs font-semibold text-[#b85d19] bg-[#fdf1e7] px-3 py-1.5 rounded-lg border border-[#edd1bc]"
                 >
                   حساب
                 </Link>
@@ -318,10 +318,10 @@ export function SiteHeader() {
             ) : (
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
-                  <UserIcon className="w-5 h-5 text-[#8c4f27]" />
+                  <UserIcon className="w-5 h-5 text-[#b85d19]" />
                   <div>
-                    <div className="text-xs font-bold text-stone-900">حساب کاربری</div>
-                    <div className="text-[11px] text-stone-500">برای پیگیری سفارشات وارد شوید</div>
+                    <div className="text-xs font-bold text-[#2b1e17]">حساب کاربری</div>
+                    <div className="text-[11px] text-[#8c796e]">برای پیگیری سفارشات وارد شوید</div>
                   </div>
                 </div>
                 <Button
@@ -340,7 +340,7 @@ export function SiteHeader() {
 
           {/* Navigation Links Group */}
           <div className="space-y-1">
-            <span className="text-[11px] font-bold text-stone-400 uppercase tracking-wider block px-2 mb-2">
+            <span className="text-[11px] font-bold text-[#8c796e] uppercase tracking-wider block px-2 mb-2">
               بخش‌های آتلیه روت‌وود
             </span>
 
@@ -348,36 +348,36 @@ export function SiteHeader() {
             <Link
               href="/"
               onClick={() => setMobileDrawerOpen(false)}
-              className="flex items-center justify-between p-3 rounded-xl text-sm font-semibold text-stone-800 hover:bg-[#f8ede2]/50 transition-colors"
+              className="flex items-center justify-between p-3 rounded-xl text-sm font-semibold text-[#2b1e17] hover:bg-[#fdf1e7]/60 transition-colors"
             >
               <div className="flex items-center gap-3">
-                <Compass className="w-4 h-4 text-stone-500" />
+                <Compass className="w-4 h-4 text-[#8c796e]" />
                 <span>صفحه اصلی</span>
               </div>
-              <ArrowLeft className="w-3.5 h-3.5 text-stone-400" />
+              <ArrowLeft className="w-3.5 h-3.5 text-[#8c796e]" />
             </Link>
 
             {/* All Products */}
             <Link
               href="/products"
               onClick={() => setMobileDrawerOpen(false)}
-              className="flex items-center justify-between p-3 rounded-xl text-sm font-semibold text-stone-800 hover:bg-[#f8ede2]/50 transition-colors"
+              className="flex items-center justify-between p-3 rounded-xl text-sm font-semibold text-[#2b1e17] hover:bg-[#fdf1e7]/60 transition-colors"
             >
               <div className="flex items-center gap-3">
-                <Layers className="w-4 h-4 text-stone-500" />
+                <Layers className="w-4 h-4 text-[#8c796e]" />
                 <span>محصولات</span>
               </div>
-              <ArrowLeft className="w-3.5 h-3.5 text-stone-400" />
+              <ArrowLeft className="w-3.5 h-3.5 text-[#8c796e]" />
             </Link>
 
             {/* Bestsellers */}
             <Link
               href="/products?featured=true"
               onClick={() => setMobileDrawerOpen(false)}
-              className="flex items-center justify-between p-3 rounded-xl text-sm font-semibold text-[#8c4f27] bg-[#f8ede2] border border-[#eddcd0] hover:bg-[#f4e4d5] transition-colors"
+              className="flex items-center justify-between p-3 rounded-xl text-sm font-semibold text-[#b85d19] bg-[#fdf1e7] border border-[#edd1bc] hover:bg-[#fce7d6] transition-colors"
             >
               <div className="flex items-center gap-3">
-                <Flame className="w-4 h-4 text-[#8c4f27]" />
+                <Flame className="w-4 h-4 text-[#b85d19]" />
                 <span>پرفروش‌ترین دست‌سازه‌ها</span>
               </div>
               <Badge variant="gold" className="text-[10px]">پیشنهاد ویژه</Badge>
@@ -388,27 +388,27 @@ export function SiteHeader() {
               <button
                 type="button"
                 onClick={() => setCategoriesOpen(!categoriesOpen)}
-                className="w-full flex items-center justify-between p-3 text-sm font-semibold text-stone-800 hover:bg-[#f8ede2]/50 transition-colors"
+                className="w-full flex items-center justify-between p-3 text-sm font-semibold text-[#2b1e17] hover:bg-[#fdf1e7]/60 transition-colors"
               >
                 <div className="flex items-center gap-3">
-                  <Sparkles className="w-4 h-4 text-[#8c4f27]" />
+                  <Sparkles className="w-4 h-4 text-[#b85d19]" />
                   <span>دسته‌بندی‌های چوبی</span>
                 </div>
                 <ChevronDown
-                  className={`w-4 h-4 text-stone-400 transition-transform duration-200 ${
+                  className={`w-4 h-4 text-[#8c796e] transition-transform duration-200 ${
                     categoriesOpen ? "rotate-180" : ""
                   }`}
                 />
               </button>
 
               {categoriesOpen && (
-                <div className="bg-[#f8ede2]/60 p-2 space-y-1 rounded-xl mr-3 my-1 border-r-2 border-[#8c4f27]/40">
+                <div className="bg-[#f4ece4] p-2 space-y-1 rounded-xl mr-3 my-1 border-r-2 border-[#b85d19]">
                   {categories.map((c) => (
                     <Link
                       key={c.slug}
                       href={`/products?category=${c.slug}`}
                       onClick={() => setMobileDrawerOpen(false)}
-                      className="block p-2 rounded-lg text-xs font-medium text-stone-700 hover:bg-white hover:text-[#8c4f27] transition-colors"
+                      className="block p-2 rounded-lg text-xs font-medium text-[#2b1e17] hover:bg-white hover:text-[#b85d19] transition-colors"
                     >
                       {c.name}
                     </Link>
@@ -421,10 +421,10 @@ export function SiteHeader() {
             <Link
               href="/contact"
               onClick={() => setMobileDrawerOpen(false)}
-              className="flex items-center justify-between p-3 rounded-xl text-sm font-semibold text-stone-800 hover:bg-[#f8ede2]/50 transition-colors"
+              className="flex items-center justify-between p-3 rounded-xl text-sm font-semibold text-[#2b1e17] hover:bg-[#fdf1e7]/60 transition-colors"
             >
               <div className="flex items-center gap-3">
-                <Hammer className="w-4 h-4 text-stone-500" />
+                <Hammer className="w-4 h-4 text-[#8c796e]" />
                 <span>سفارش ساخت اختصاصی</span>
               </div>
               <Badge variant="wood" className="text-[10px]">ابعاد دلخواه</Badge>
@@ -434,52 +434,52 @@ export function SiteHeader() {
             <Link
               href="/blog"
               onClick={() => setMobileDrawerOpen(false)}
-              className="flex items-center justify-between p-3 rounded-xl text-sm font-semibold text-stone-800 hover:bg-[#f8ede2]/50 transition-colors"
+              className="flex items-center justify-between p-3 rounded-xl text-sm font-semibold text-[#2b1e17] hover:bg-[#fdf1e7]/60 transition-colors"
             >
               <div className="flex items-center gap-3">
-                <BookOpen className="w-4 h-4 text-stone-500" />
+                <BookOpen className="w-4 h-4 text-[#8c796e]" />
                 <span>مجله و مقالات چوب</span>
               </div>
-              <ArrowLeft className="w-3.5 h-3.5 text-stone-400" />
+              <ArrowLeft className="w-3.5 h-3.5 text-[#8c796e]" />
             </Link>
 
             {/* About */}
             <Link
               href="/about"
               onClick={() => setMobileDrawerOpen(false)}
-              className="flex items-center justify-between p-3 rounded-xl text-sm font-semibold text-stone-800 hover:bg-[#f8ede2]/50 transition-colors"
+              className="flex items-center justify-between p-3 rounded-xl text-sm font-semibold text-[#2b1e17] hover:bg-[#fdf1e7]/60 transition-colors"
             >
               <div className="flex items-center gap-3">
-                <Compass className="w-4 h-4 text-stone-500" />
+                <Compass className="w-4 h-4 text-[#8c796e]" />
                 <span>داستان کارگاه روت‌وود</span>
               </div>
-              <ArrowLeft className="w-3.5 h-3.5 text-stone-400" />
+              <ArrowLeft className="w-3.5 h-3.5 text-[#8c796e]" />
             </Link>
           </div>
 
           <Separator />
 
           {/* Workshop Contact Details Card in Drawer */}
-          <div className="space-y-3 p-4 bg-[#f8ede2]/50 rounded-2xl text-xs text-stone-600 border border-[#eddcd0]/60">
-            <div className="flex items-center gap-2 font-bold text-stone-800 text-xs">
-              <Phone className="w-3.5 h-3.5 text-[#8c4f27]" />
+          <div className="space-y-3 p-4 bg-[#f4ece4] rounded-2xl text-xs text-[#655347] border border-[#e8ded3]">
+            <div className="flex items-center gap-2 font-bold text-[#2b1e17] text-xs">
+              <Phone className="w-3.5 h-3.5 text-[#b85d19]" />
               <span>تماس مستقیم با استودیو:</span>
             </div>
             <div className="flex justify-between items-center" dir="ltr">
-              <span className="font-mono text-stone-800 font-bold">021 - 8877 6655</span>
-              <span className="text-[11px] text-stone-500">(۹ صبح الی ۶ عصر)</span>
+              <span className="font-mono text-[#2b1e17] font-bold">021 - 8877 6655</span>
+              <span className="text-[11px] text-[#8c796e]">(۹ صبح الی ۶ عصر)</span>
             </div>
-            <p className="text-[11px] text-stone-500 leading-relaxed">
+            <p className="text-[11px] text-[#8c796e] leading-relaxed">
               تهران، خیابان ولیعصر، بالاتر از پارک ساعی، استودیو روت‌وود
             </p>
           </div>
         </div>
 
-        {/* Drawer Bottom Footer with Cart Button */}
-        <div className="p-4 border-t border-[#eddcd0] bg-white sticky bottom-0">
+        {/* Drawer Bottom Footer with Cart Button (10% Accent CTA) */}
+        <div className="p-4 border-t border-[#e8ded3] bg-white sticky bottom-0">
           <Button
             type="button"
-            className="w-full justify-between"
+            className="w-full justify-between bg-[#b85d19] hover:bg-[#9e4e13] text-white"
             onClick={() => {
               setMobileDrawerOpen(false);
               openCart();
@@ -489,7 +489,7 @@ export function SiteHeader() {
               <ShoppingBag className="w-4 h-4" />
               <span>مشاهده سبد خرید</span>
             </div>
-            <span className="bg-[#78401d] text-white text-xs font-bold px-2 py-0.5 rounded-full">
+            <span className="bg-[#87400d] text-white text-xs font-bold px-2 py-0.5 rounded-full">
               {itemCount} کالا
             </span>
           </Button>

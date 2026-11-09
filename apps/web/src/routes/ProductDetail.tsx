@@ -97,7 +97,7 @@ export function ProductDetail() {
     return (
       <div className="min-h-[70vh] flex items-center justify-center bg-[#fcfbf9]">
         <div className="text-center space-y-4">
-          <div className="w-12 h-12 border-4 border-[#8c4f27]/20 border-t-[#8c4f27] rounded-full animate-spin mx-auto" />
+          <div className="w-12 h-12 border-4 border-[#b85d19]/20 border-t-[#b85d19] rounded-full animate-spin mx-auto" />
           <p className="text-stone-600 text-sm font-medium">در حال فراخوانی مشخصات دست‌سازه...</p>
         </div>
       </div>
@@ -184,15 +184,15 @@ export function ProductDetail() {
       <div className="border-b border-stone-200/80 bg-white/70 backdrop-blur-xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5">
           <nav className="flex items-center gap-2 text-xs text-stone-500 overflow-x-auto">
-            <Link href="/" className="hover:text-[#8c4f27] transition">خانه</Link>
+            <Link href="/" className="hover:text-[#b85d19] transition">خانه</Link>
             <span>/</span>
-            <Link href="/products" className="hover:text-[#8c4f27] transition">کاتالوگ آثار</Link>
+            <Link href="/products" className="hover:text-[#b85d19] transition">کاتالوگ آثار</Link>
             {product.category && (
               <>
                 <span>/</span>
                 <Link
                   href={`/products?category=${product.category.slug}`}
-                  className="hover:text-[#8c4f27] transition"
+                  className="hover:text-[#b85d19] transition"
                 >
                   {product.category.name}
                 </Link>
@@ -237,7 +237,7 @@ export function ProductDetail() {
                 type="button"
                 onClick={handleShare}
                 aria-label="اشتراک‌گذاری این دست‌سازه"
-                className="absolute top-4 left-4 w-10 h-10 rounded-full bg-white/90 backdrop-blur-md text-stone-700 hover:text-[#8c4f27] flex items-center justify-center shadow-md hover:scale-105 transition"
+                className="absolute top-4 left-4 w-10 h-10 rounded-full bg-white/90 backdrop-blur-md text-stone-700 hover:text-[#b85d19] flex items-center justify-center shadow-md hover:scale-105 transition"
               >
                 <Share2 className="w-4 h-4" />
               </button>
@@ -253,7 +253,7 @@ export function ProductDetail() {
                     onClick={() => setSelectedImage(idx)}
                     className={`relative w-20 h-20 rounded-2xl overflow-hidden border-2 shrink-0 transition-all ${
                       selectedImage === idx
-                        ? "border-[#8c4f27] ring-2 ring-[#8c4f27]/20 shadow-md scale-102"
+                        ? "border-[#b85d19] ring-2 ring-[#b85d19]/20 shadow-md scale-102"
                         : "border-stone-200 opacity-60 hover:opacity-100"
                     }`}
                   >
@@ -317,7 +317,7 @@ export function ProductDetail() {
                     </Badge>
                   </div>
                 )}
-                <div className="text-2xl sm:text-3xl font-black text-[#8c4f27] font-serif">
+                <div className="text-2xl sm:text-3xl font-black text-[#b85d19] font-serif">
                   {formatPriceToman(product.price)}
                 </div>
               </div>

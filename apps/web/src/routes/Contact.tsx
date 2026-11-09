@@ -132,12 +132,12 @@ export function Contact() {
               </div>
             </div>
 
-            <div className="bg-gradient-to-br from-[#78401d] via-[#8c4f27] to-[#633316] text-[#fcfaf7] p-6 sm:p-8 rounded-3xl space-y-3 shadow-sm">
-              <div className="flex items-center gap-2 text-amber-200 font-bold text-sm">
+            <div className="border border-[#e8ded3] bg-[#f4ece4] p-6 sm:p-8 rounded-3xl space-y-3 shadow-2xs">
+              <div className="flex items-center gap-2 text-[#b85d19] font-bold text-sm">
                 <Sparkles className="w-4 h-4" />
                 <span>فرآیند سفارش اختصاصی</span>
               </div>
-              <p className="text-xs text-[#fbf4ec]/90 leading-relaxed">
+              <p className="text-xs text-[#655347] leading-relaxed">
                 پس از ثبت فرم، استادکاران ما ظرف ۲۴ ساعت برای گفتگو پیرامون طرح، متریال، ابعاد دقیق و ارائه پیش‌طرح سه‌بعدی و برآورد زمان ساخت با شما تماس خواهند گرفت.
               </p>
             </div>
@@ -175,8 +175,8 @@ export function Contact() {
                     <label
                       className={`p-3 rounded-xl border flex items-center gap-2 cursor-pointer transition ${
                         inquiryType === "bespoke"
-                          ? "border-[#8c4f27] bg-[#f8ede2] ring-1 ring-[#8c4f27] font-bold text-[#8c4f27]"
-                          : "border-stone-200 text-stone-700 hover:bg-[#f8ede2]/30"
+                          ? "border-[#b85d19] bg-[#fdf1e7] ring-1 ring-[#b85d19] font-bold text-[#b85d19]"
+                          : "border-[#e8ded3] text-[#2b1e17] hover:bg-[#fdf1e7]/30"
                       }`}
                     >
                       <input
@@ -185,7 +185,7 @@ export function Contact() {
                         value="bespoke"
                         checked={inquiryType === "bespoke"}
                         onChange={() => setInquiryType("bespoke")}
-                        className="text-[#8c4f27]"
+                        className="text-[#b85d19]"
                       />
                       <span>سفارش ساخت اختصاصی</span>
                     </label>
@@ -193,8 +193,8 @@ export function Contact() {
                     <label
                       className={`p-3 rounded-xl border flex items-center gap-2 cursor-pointer transition ${
                         inquiryType === "general"
-                          ? "border-[#8c4f27] bg-[#f8ede2] ring-1 ring-[#8c4f27] font-bold text-[#8c4f27]"
-                          : "border-stone-200 text-stone-700 hover:bg-[#f8ede2]/30"
+                          ? "border-[#b85d19] bg-[#fdf1e7] ring-1 ring-[#b85d19] font-bold text-[#b85d19]"
+                          : "border-[#e8ded3] text-[#2b1e17] hover:bg-[#fdf1e7]/30"
                       }`}
                     >
                       <input
@@ -203,7 +203,7 @@ export function Contact() {
                         value="general"
                         checked={inquiryType === "general"}
                         onChange={() => setInquiryType("general")}
-                        className="text-amber-900"
+                        className="text-[#b85d19]"
                       />
                       <span>تماس و پرسش عمومی</span>
                     </label>
