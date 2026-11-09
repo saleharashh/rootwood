@@ -31,6 +31,14 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselPrevious,
+  CarouselNext,
+  type CarouselApi,
+} from "@/components/ui/carousel";
 
 export function ProductDetail() {
   const [, params] = useRoute("/products/:slug");
@@ -41,6 +49,8 @@ export function ProductDetail() {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState(0);
+  const [carouselApi, setCarouselApi] = useState<CarouselApi>();
+  const [currentSlide, setCurrentSlide] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [selectedWood, setSelectedWood] = useState<string>("");
   const [activeTab, setActiveTab] = useState<string>("specs");
@@ -92,6 +102,22 @@ export function ProductDetail() {
       isMounted = false;
     };
   }, [slug]);
+
+  // Sync Carousel selection with thumbnail state
+  useEffect(() => {
+    if (!carouselApi) return;
+    setCurrentSlide(carouselApi.selectedScrollSnap());
+    carouselApi.on("select", () => {
+      const snap = carouselApi.selectedScrollSnap();
+      setCurrentSlide(snap);
+      setSelectedImage(snap);
+    });
+  }, [carouselApi]);
+
+  const handleSelectThumbnail = (index: number) => {
+    setSelectedImage(index);
+    carouselApi?.scrollTo(index);
+  };
 
   if (loading) {
     return (
@@ -207,26 +233,41 @@ export function ProductDetail() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
           {/* ========================================================================= */}
-          {/* GALLERY SECTION (7 cols)                                                  */}
+          {/* GALLERY SECTION (7 cols - Scoped sticky on desktop only, relative on mobile) */}
           {/* ========================================================================= */}
-          <div className="lg:col-span-7 space-y-4 sticky top-28">
-            <div className="relative aspect-4/3 rounded-3xl overflow-hidden bg-stone-100 border border-stone-200/90 shadow-card">
-              <img
-                src={images[selectedImage] || "/images/workshop.webp"}
-                alt={product.title}
-                className="w-full h-full object-cover transition-all duration-300"
-              />
+          <div className="lg:col-span-7 space-y-4 relative lg:sticky lg:top-24 lg:self-start">
+            <Carousel
+              setApi={setCarouselApi}
+              opts={{
+                direction: "rtl",
+                loop: images.length > 1,
+              }}
+              className="w-full"
+            >
+              <CarouselContent>
+                {images.map((img, idx) => (
+                  <CarouselItem key={idx}>
+                    <div className="relative aspect-4/3 sm:aspect-16/11 rounded-3xl overflow-hidden bg-stone-100 border border-stone-200/90 shadow-card">
+                      <img
+                        src={img}
+                        alt={`${product.title} - تصویر ${idx + 1}`}
+                        className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+                      />
+                    </div>
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
 
               {/* Floating Badges */}
-              <div className="absolute top-4 right-4 flex flex-col gap-2 items-end">
+              <div className="absolute top-4 right-4 flex flex-col gap-2 items-end pointer-events-none z-10">
                 {product.featured && (
-                  <Badge variant="gold" className="shadow-xs backdrop-blur-xs gap-1.5 py-1 px-3">
+                  <Badge variant="gold" className="shadow-xs backdrop-blur-xs gap-1.5 py-1 px-3 pointer-events-auto">
                     <Flame className="w-3.5 h-3.5 text-amber-700 fill-current" />
                     <span>شاهکار برگزیده کارگاه</span>
                   </Badge>
                 )}
                 {product.originalPrice && product.originalPrice > product.price && (
-                  <Badge variant="destructive" className="shadow-xs font-bold py-1 px-3">
+                  <Badge variant="destructive" className="shadow-xs font-bold py-1 px-3 pointer-events-auto">
                     تخفیف ویژه کارگاه
                   </Badge>
                 )}
@@ -237,27 +278,42 @@ export function ProductDetail() {
                 type="button"
                 onClick={handleShare}
                 aria-label="اشتراک‌گذاری این دست‌سازه"
-                className="absolute top-4 left-4 w-10 h-10 rounded-full bg-white/90 backdrop-blur-md text-stone-700 hover:text-[#b85d19] flex items-center justify-center shadow-md hover:scale-105 transition"
+                className="absolute top-4 left-4 w-10 h-10 rounded-full bg-white/90 backdrop-blur-md text-stone-700 hover:text-[#b85d19] flex items-center justify-center shadow-md hover:scale-105 transition z-10"
               >
                 <Share2 className="w-4 h-4" />
               </button>
-            </div>
 
-            {/* Gallery Thumbnails */}
+              {/* Slide Counter Pill */}
+              {images.length > 1 && (
+                <div className="absolute bottom-4 left-4 bg-black/60 backdrop-blur-md text-white text-[11px] font-medium px-3 py-1 rounded-full z-10 pointer-events-none">
+                  {toPersianDigits(currentSlide + 1)} از {toPersianDigits(images.length)}
+                </div>
+              )}
+
+              {/* Official Shadcn Carousel Navigation Controls */}
+              {images.length > 1 && (
+                <>
+                  <CarouselPrevious />
+                  <CarouselNext />
+                </>
+              )}
+            </Carousel>
+
+            {/* Gallery Thumbnails (Interactive Sync) */}
             {images.length > 1 && (
-              <div className="flex gap-3 overflow-x-auto pb-2">
+              <div className="flex gap-3 overflow-x-auto pb-2 pt-1 no-scrollbar">
                 {images.map((img, idx) => (
                   <button
                     key={idx}
                     type="button"
-                    onClick={() => setSelectedImage(idx)}
+                    onClick={() => handleSelectThumbnail(idx)}
                     className={`relative w-20 h-20 rounded-2xl overflow-hidden border-2 shrink-0 transition-all ${
-                      selectedImage === idx
-                        ? "border-[#b85d19] ring-2 ring-[#b85d19]/20 shadow-md scale-102"
+                      currentSlide === idx
+                        ? "border-[#b85d19] ring-2 ring-[#b85d19]/20 shadow-md scale-102 opacity-100"
                         : "border-stone-200 opacity-60 hover:opacity-100"
                     }`}
                   >
-                    <img src={img} alt={`تصویر ${idx + 1}`} className="w-full h-full object-cover" />
+                    <img src={img} alt={`بندانگشتی ${idx + 1}`} className="w-full h-full object-cover" />
                   </button>
                 ))}
               </div>

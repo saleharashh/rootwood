@@ -327,6 +327,7 @@ export interface ApiCallable {
   createOrder: (data: {
     shippingAddress: Partial<Address>;
     customerNote?: string;
+    note?: string;
     items: { productId: string; quantity: number }[];
   }) => Promise<{ order: Order }>;
   cancelOrder: (id: string) => Promise<{ message: string }>;
