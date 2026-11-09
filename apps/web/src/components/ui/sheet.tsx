@@ -1,4 +1,5 @@
 import * as React from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -35,25 +36,25 @@ export function Sheet({
   if (!open) return null;
 
   const sideClasses = {
-    right: "inset-y-0 right-0 h-full w-full sm:max-w-md animate-in slide-in-from-right duration-300",
-    left: "inset-y-0 left-0 h-full w-full sm:max-w-md animate-in slide-in-from-left duration-300",
-    top: "inset-x-0 top-0 w-full animate-in slide-in-from-top duration-300",
-    bottom: "inset-x-0 bottom-0 w-full animate-in slide-in-from-bottom duration-300",
+    right: "fixed inset-y-0 right-0 h-full w-full sm:max-w-md animate-in slide-in-from-right duration-300",
+    left: "fixed inset-y-0 left-0 h-full w-full sm:max-w-md animate-in slide-in-from-left duration-300",
+    top: "fixed inset-x-0 top-0 w-full animate-in slide-in-from-top duration-300",
+    bottom: "fixed inset-x-0 bottom-0 w-full animate-in slide-in-from-bottom duration-300",
   }[side];
 
-  return (
-    <div className="fixed inset-0 z-50 flex" dir="rtl">
-      {/* Backdrop */}
+  const content = (
+    <div className="fixed inset-0 z-50" dir="rtl">
+      {/* Fullscreen Backdrop */}
       <div
         className="fixed inset-0 bg-stone-950/60 backdrop-blur-xs transition-opacity animate-in fade-in duration-300"
         onClick={onClose}
         aria-hidden="true"
       />
 
-      {/* Drawer Panel */}
+      {/* Drawer Panel - Full screen height */}
       <div
         className={cn(
-          "relative z-50 flex flex-col bg-[#fcfbf9] text-stone-900 shadow-2xl border-l border-stone-200/80 overflow-y-auto",
+          "z-50 flex flex-col bg-[#faf8f5] text-[#2b1e17] shadow-2xl border-l border-[#e8ded3] overflow-y-auto",
           sideClasses,
           className
         )}
@@ -64,6 +65,9 @@ export function Sheet({
       </div>
     </div>
   );
+
+  if (typeof document === "undefined") return null;
+  return createPortal(content, document.body);
 }
 
 export function SheetHeader({
