@@ -31,13 +31,13 @@ export function SiteHeader() {
   const { itemCount } = useCart();
   const { openAuth, openCart, openSearch } = useStoreDialogs();
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
-  const [categoriesOpen, setCategoriesOpen] = useState(false);
-  const [categoryMenuOpen, setCategoryMenuOpen] = useState(false);
+  const [mobileProductsOpen, setMobileProductsOpen] = useState(true);
+  const [productsMenuOpen, setProductsMenuOpen] = useState(false);
 
-  // Close drawer on route change
+  // Close drawer & menu on route change
   useEffect(() => {
     setMobileDrawerOpen(false);
-    setCategoryMenuOpen(false);
+    setProductsMenuOpen(false);
   }, [location]);
 
   const categories = [
@@ -47,8 +47,7 @@ export function SiteHeader() {
     { name: "ظروف و اکسسوری چوبی", slug: "decor", desc: "خراطی ظریف از چوب توت و گردو" },
   ];
 
-  const isBestsellerActive = location.includes("featured=true");
-  const isProductsActive = location.startsWith("/products") && !isBestsellerActive;
+  const isProductsActive = location.startsWith("/products");
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-[#e8ded3] bg-[#faf8f5]/95 backdrop-blur-md transition-all">
@@ -85,87 +84,97 @@ export function SiteHeader() {
             </span>
           </Link>
 
-          {/* Desktop Navigation Links - Single line without wrapping */}
-          <nav className="hidden md:flex items-center gap-1 lg:gap-1.5 flex-nowrap shrink-0">
-            {/* 1. All Products */}
-            <Link
-              href="/products"
-              className={`px-3 py-1.5 rounded-lg text-xs lg:text-[13px] font-medium whitespace-nowrap transition-all ${
-                isProductsActive
-                  ? "bg-[#fdf1e7] text-[#b85d19] font-bold"
-                  : "text-[#655347] hover:text-[#b85d19] hover:bg-[#fdf1e7]/60"
-              }`}
+          {/* Desktop Navigation Links - Consolidated & balanced */}
+          <nav className="hidden md:flex items-center gap-1.5 lg:gap-2 flex-nowrap shrink-0">
+            {/* Unified 3-in-1: Products, Categories & Bestsellers Mega-Dropdown */}
+            <div
+              className="relative group"
+              onMouseEnter={() => setProductsMenuOpen(true)}
+              onMouseLeave={() => setProductsMenuOpen(false)}
             >
-              محصولات
-            </Link>
-
-            {/* 2. Bestsellers */}
-            <Link
-              href="/products?featured=true"
-              className={`px-3 py-1.5 rounded-lg text-xs lg:text-[13px] font-medium whitespace-nowrap transition-all flex items-center gap-1.5 ${
-                isBestsellerActive
-                  ? "bg-[#fdf1e7] text-[#b85d19] font-bold"
-                  : "text-[#655347] hover:text-[#b85d19] hover:bg-[#fdf1e7]/60"
-              }`}
-            >
-              <span>پرفروش‌ها</span>
-              <span className="w-1.5 h-1.5 rounded-full bg-[#b85d19]" />
-            </Link>
-
-            {/* 3. Categories Dropdown */}
-            <div className="relative group">
               <button
                 type="button"
-                onClick={() => setCategoryMenuOpen(!categoryMenuOpen)}
-                onMouseEnter={() => setCategoryMenuOpen(true)}
-                className="px-3 py-1.5 rounded-lg text-xs lg:text-[13px] font-medium text-[#655347] hover:text-[#b85d19] hover:bg-[#fdf1e7]/60 whitespace-nowrap transition-all flex items-center gap-1"
+                onClick={() => setProductsMenuOpen(!productsMenuOpen)}
+                className={`px-3 py-1.5 rounded-lg text-xs lg:text-[13px] font-medium whitespace-nowrap transition-all flex items-center gap-1.5 ${
+                  isProductsActive
+                    ? "bg-[#fdf1e7] text-[#b85d19] font-bold"
+                    : "text-[#655347] hover:text-[#b85d19] hover:bg-[#fdf1e7]/60"
+                }`}
               >
-                <span>دسته‌بندی‌ها</span>
-                <ChevronDown className="w-3.5 h-3.5 opacity-60 group-hover:rotate-180 transition-transform duration-200" />
+                <Layers className="w-3.5 h-3.5 text-[#b85d19]" />
+                <span>محصولات و دسته‌بندی‌ها</span>
+                <ChevronDown className={`w-3.5 h-3.5 opacity-60 transition-transform duration-200 ${productsMenuOpen ? "rotate-180" : ""}`} />
               </button>
 
-              {/* Hover Dropdown Card */}
+              {/* Hover Dropdown Menu */}
               <div
-                onMouseLeave={() => setCategoryMenuOpen(false)}
-                className={`absolute top-full right-0 mt-1 w-72 rounded-2xl border border-[#e8ded3] bg-white/95 backdrop-blur-md shadow-xl p-2 transition-all duration-200 z-50 ${
-                  categoryMenuOpen
+                className={`absolute top-full right-0 mt-1.5 w-80 rounded-2xl border border-[#e8ded3] bg-white/98 backdrop-blur-md shadow-xl p-2.5 transition-all duration-200 z-50 ${
+                  productsMenuOpen
                     ? "opacity-100 visible translate-y-0"
                     : "opacity-0 invisible -translate-y-2 pointer-events-none"
                 }`}
               >
-                <div className="p-2 border-b border-[#f0e7dd] mb-1">
-                  <span className="text-[11px] font-bold text-[#8c796e] uppercase tracking-wider block">
-                    مجموعه‌های چوب طبیعی
-                  </span>
-                </div>
-                {categories.map((c) => (
-                  <Link
-                    key={c.slug}
-                    href={`/products?category=${c.slug}`}
-                    onClick={() => setCategoryMenuOpen(false)}
-                    className="flex flex-col p-2.5 rounded-xl hover:bg-[#fdf1e7] transition-colors group/item"
-                  >
-                    <span className="text-xs font-bold text-[#2b1e17] group-hover/item:text-[#b85d19]">
-                      {c.name}
-                    </span>
-                    <span className="text-[11px] text-[#655347] line-clamp-1">
-                      {c.desc}
-                    </span>
-                  </Link>
-                ))}
-                <div className="pt-2 mt-1 border-t border-[#f0e7dd]">
+                {/* Top Quick Actions: All Products + Bestsellers */}
+                <div className="grid grid-cols-2 gap-1.5 p-1 bg-[#f4ece4]/70 rounded-xl mb-2 border border-[#e8ded3]/80">
                   <Link
                     href="/products"
-                    onClick={() => setCategoryMenuOpen(false)}
-                    className="text-center block text-xs font-bold text-[#b85d19] hover:underline py-1"
+                    onClick={() => setProductsMenuOpen(false)}
+                    className="flex items-center justify-center gap-1.5 p-2 rounded-lg bg-white text-xs font-bold text-[#2b1e17] hover:text-[#b85d19] hover:shadow-xs transition-all border border-[#e8ded3]/60"
                   >
-                    مشاهده تمامی گروه‌ها ←
+                    <Layers className="w-3.5 h-3.5 text-[#b85d19]" />
+                    <span>تمامی آثار</span>
+                  </Link>
+                  <Link
+                    href="/products?featured=true"
+                    onClick={() => setProductsMenuOpen(false)}
+                    className="flex items-center justify-center gap-1.5 p-2 rounded-lg bg-[#fdf1e7] text-xs font-bold text-[#b85d19] hover:bg-[#fae6d4] transition-all border border-[#edd1bc]"
+                  >
+                    <Flame className="w-3.5 h-3.5 text-[#b85d19]" />
+                    <span>پرفروش‌ترین‌ها</span>
+                  </Link>
+                </div>
+
+                {/* Categories list */}
+                <div className="px-2 py-1.5 flex items-center justify-between text-[11px] font-bold text-[#8c796e] uppercase tracking-wider">
+                  <span>مجموعه‌های چوب طبیعی</span>
+                  <span className="text-[10px] text-[#b85d19] font-medium">{categories.length} دسته</span>
+                </div>
+
+                <div className="space-y-0.5">
+                  {categories.map((c) => (
+                    <Link
+                      key={c.slug}
+                      href={`/products?category=${c.slug}`}
+                      onClick={() => setProductsMenuOpen(false)}
+                      className="flex items-center justify-between p-2 rounded-xl hover:bg-[#fdf1e7] transition-colors group/item"
+                    >
+                      <div className="flex flex-col">
+                        <span className="text-xs font-bold text-[#2b1e17] group-hover/item:text-[#b85d19] transition-colors">
+                          {c.name}
+                        </span>
+                        <span className="text-[10px] text-[#655347]">
+                          {c.desc}
+                        </span>
+                      </div>
+                      <ArrowLeft className="w-3.5 h-3.5 text-[#8c796e] group-hover/item:-translate-x-1 group-hover/item:text-[#b85d19] transition-all" />
+                    </Link>
+                  ))}
+                </div>
+
+                <div className="pt-2 mt-1.5 border-t border-[#f0e7dd] text-center">
+                  <Link
+                    href="/products"
+                    onClick={() => setProductsMenuOpen(false)}
+                    className="inline-flex items-center gap-1 text-xs font-bold text-[#b85d19] hover:underline py-0.5"
+                  >
+                    <span>مشاهده کاتالوگ با فیلتر گونه چوب و ابعاد</span>
+                    <ArrowLeft className="w-3 h-3" />
                   </Link>
                 </div>
               </div>
             </div>
 
-            {/* 4. Bespoke Custom Orders */}
+            {/* Bespoke Custom Orders */}
             <Link
               href="/contact"
               className={`px-3 py-1.5 rounded-lg text-xs lg:text-[13px] font-medium whitespace-nowrap transition-all ${
@@ -177,7 +186,19 @@ export function SiteHeader() {
               سفارش ساخت
             </Link>
 
-            {/* 5. Journal */}
+            {/* Track Order */}
+            <Link
+              href="/track"
+              className={`px-3 py-1.5 rounded-lg text-xs lg:text-[13px] font-medium whitespace-nowrap transition-all ${
+                location === "/track"
+                  ? "bg-[#fdf1e7] text-[#b85d19] font-bold"
+                  : "text-[#655347] hover:text-[#b85d19] hover:bg-[#fdf1e7]/60"
+              }`}
+            >
+              پیگیری سفارش
+            </Link>
+
+            {/* Journal */}
             <Link
               href="/blog"
               className={`px-3 py-1.5 rounded-lg text-xs lg:text-[13px] font-medium whitespace-nowrap transition-all ${
@@ -189,7 +210,7 @@ export function SiteHeader() {
               مجله
             </Link>
 
-            {/* 6. About Workshop */}
+            {/* About Workshop */}
             <Link
               href="/about"
               className={`px-3 py-1.5 rounded-lg text-xs lg:text-[13px] font-medium whitespace-nowrap transition-all ${
@@ -358,60 +379,62 @@ export function SiteHeader() {
               <ArrowLeft className="w-3.5 h-3.5 text-[#8c796e]" />
             </Link>
 
-            {/* All Products */}
-            <Link
-              href="/products"
-              onClick={() => setMobileDrawerOpen(false)}
-              className="flex items-center justify-between p-3 rounded-xl text-sm font-semibold text-[#2b1e17] hover:bg-[#fdf1e7]/60 transition-colors"
-            >
-              <div className="flex items-center gap-3">
-                <Layers className="w-4 h-4 text-[#8c796e]" />
-                <span>محصولات</span>
-              </div>
-              <ArrowLeft className="w-3.5 h-3.5 text-[#8c796e]" />
-            </Link>
-
-            {/* Bestsellers */}
-            <Link
-              href="/products?featured=true"
-              onClick={() => setMobileDrawerOpen(false)}
-              className="flex items-center justify-between p-3 rounded-xl text-sm font-semibold text-[#b85d19] bg-[#fdf1e7] border border-[#edd1bc] hover:bg-[#fce7d6] transition-colors"
-            >
-              <div className="flex items-center gap-3">
-                <Flame className="w-4 h-4 text-[#b85d19]" />
-                <span>پرفروش‌ترین دست‌سازه‌ها</span>
-              </div>
-              <Badge variant="gold" className="text-[10px]">پیشنهاد ویژه</Badge>
-            </Link>
-
-            {/* Categories Accordion */}
-            <div className="rounded-xl overflow-hidden">
+            {/* Unified 3-in-1: Products, Bestsellers & Categories Accordion */}
+            <div className="rounded-2xl border border-[#e8ded3] bg-white overflow-hidden shadow-2xs">
               <button
                 type="button"
-                onClick={() => setCategoriesOpen(!categoriesOpen)}
-                className="w-full flex items-center justify-between p-3 text-sm font-semibold text-[#2b1e17] hover:bg-[#fdf1e7]/60 transition-colors"
+                onClick={() => setMobileProductsOpen(!mobileProductsOpen)}
+                className="w-full flex items-center justify-between p-3.5 text-sm font-bold text-[#2b1e17] hover:bg-[#fdf1e7]/40 transition-colors"
               >
-                <div className="flex items-center gap-3">
-                  <Sparkles className="w-4 h-4 text-[#b85d19]" />
-                  <span>دسته‌بندی‌های چوبی</span>
+                <div className="flex items-center gap-2.5">
+                  <Layers className="w-4 h-4 text-[#b85d19]" />
+                  <span>محصولات و دسته‌بندی‌ها</span>
                 </div>
                 <ChevronDown
                   className={`w-4 h-4 text-[#8c796e] transition-transform duration-200 ${
-                    categoriesOpen ? "rotate-180" : ""
+                    mobileProductsOpen ? "rotate-180" : ""
                   }`}
                 />
               </button>
 
-              {categoriesOpen && (
-                <div className="bg-[#f4ece4] p-2 space-y-1 rounded-xl mr-3 my-1 border-r-2 border-[#b85d19]">
+              {mobileProductsOpen && (
+                <div className="p-2.5 pt-0 space-y-1.5 border-t border-[#f0e7dd] bg-[#faf8f5]/60">
+                  {/* Quick Pills: All Products + Bestsellers */}
+                  <div className="grid grid-cols-2 gap-1.5 pt-2">
+                    <Link
+                      href="/products"
+                      onClick={() => setMobileDrawerOpen(false)}
+                      className="flex items-center justify-center gap-1.5 p-2 rounded-xl bg-white text-xs font-bold text-[#2b1e17] border border-[#e8ded3] shadow-2xs hover:bg-[#fdf1e7]"
+                    >
+                      <Layers className="w-3.5 h-3.5 text-[#b85d19]" />
+                      <span>تمامی آثار</span>
+                    </Link>
+                    <Link
+                      href="/products?featured=true"
+                      onClick={() => setMobileDrawerOpen(false)}
+                      className="flex items-center justify-center gap-1.5 p-2 rounded-xl bg-[#fdf1e7] text-xs font-bold text-[#b85d19] border border-[#edd1bc] shadow-2xs hover:bg-[#fae6d4]"
+                    >
+                      <Flame className="w-3.5 h-3.5 text-[#b85d19]" />
+                      <span>پرفروش‌ها</span>
+                    </Link>
+                  </div>
+
+                  {/* Categories List */}
+                  <div className="pt-2 pb-0.5 px-1">
+                    <span className="text-[10px] font-bold text-[#8c796e] uppercase tracking-wider block">
+                      دسته‌بندی‌های چوب طبیعی
+                    </span>
+                  </div>
+
                   {categories.map((c) => (
                     <Link
                       key={c.slug}
                       href={`/products?category=${c.slug}`}
                       onClick={() => setMobileDrawerOpen(false)}
-                      className="block p-2 rounded-lg text-xs font-medium text-[#2b1e17] hover:bg-white hover:text-[#b85d19] transition-colors"
+                      className="flex items-center justify-between p-2.5 rounded-xl text-xs font-medium text-[#2b1e17] bg-white hover:bg-[#fdf1e7] hover:text-[#b85d19] transition-colors border border-[#e8ded3]/60"
                     >
-                      {c.name}
+                      <span>{c.name}</span>
+                      <ArrowLeft className="w-3.5 h-3.5 text-[#8c796e]" />
                     </Link>
                   ))}
                 </div>
