@@ -6,6 +6,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/helpers.php';
 require_once __DIR__ . '/jwt.php';
 require_once __DIR__ . '/response.php';
 
@@ -16,17 +17,20 @@ function handle_contact(string $subpath, string $method): void {
         $user = get_auth_user();
         $body = get_json_input();
 
-        $name = trim($body['name'] ?? '');
-        $email = strtolower(trim($body['email'] ?? ''));
-        $phone = trim($body['phone'] ?? '') ?: null;
-        $subject = trim($body['subject'] ?? 'پیام جدید از سایت');
-        $message = trim($body['message'] ?? '');
+        $name = trim((string)($body['name'] ?? ''));
+        $email = strtolower(trim((string)($body['email'] ?? '')));
+        $phone = normalize_iranian_phone((string)($body['phone'] ?? ''));
+        $subject = trim((string)($body['subject'] ?? 'پیام جدید از سایت'));
+        $message = trim((string)($body['message'] ?? ''));
 
-        if (mb_strlen($name) < 2) {
-            json_error('نام و نام خانوادگی الزامی است', 400);
+        if (mb_strlen($name) < 2 || is_placeholder_name($name)) {
+            json_error('لطفاً نام و نام خانوادگی خود را دقیق وارد نمایید', 400);
         }
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            json_error('ایمیل معتبر نیست', 400);
+        if ($phone === null) {
+            json_error('وارد کردن شماره موبایل معتبر (مانند 09123456789) الزامی است', 400);
+        }
+        if ($email !== '' && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            json_error('ایمیل واردشده معتبر نیست', 400);
         }
         if (mb_strlen($message) < 5) {
             json_error('متن پیام باید حداقل ۵ حرف باشد', 400);

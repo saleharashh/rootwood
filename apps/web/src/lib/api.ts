@@ -182,6 +182,7 @@ export interface User {
   name: string;
   phone: string | null;
   role: "CUSTOMER" | "ADMIN";
+  profileComplete?: boolean;
 }
 
 export interface Address {
@@ -246,6 +247,8 @@ export interface Order {
 export interface Review {
   id: string;
   productId?: string;
+  productName?: string;
+  productSlug?: string;
   authorName: string;
   rating: number;
   title?: string | null;
@@ -267,8 +270,10 @@ export interface BlogPost {
   author?: { name: string };
   readingTimeMinutes?: number;
   tags: string[];
+  published?: boolean;
   publishedAt?: string;
   createdAt: string;
+  updatedAt?: string;
 }
 
 export interface AdminSummary {
@@ -286,8 +291,10 @@ export interface PaymentGateway {
   id: string;
   name: string;
   description: string;
+  logo?: string;
   isConfigured?: boolean;
   isLive?: boolean;
+  isAvailable?: boolean;
 }
 
 export type GatewayInfo = PaymentGateway;
@@ -299,8 +306,20 @@ export interface ContactMessage {
   phone?: string | null;
   subject: string;
   message: string;
-  status: "UNREAD" | "READ" | "REPLIED" | string;
+  status: "NEW" | "IN_PROGRESS" | "RESOLVED" | "UNREAD" | "READ" | "REPLIED" | string;
   createdAt: string;
+}
+
+export interface AdminCustomer {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string | null;
+  role: "CUSTOMER" | "ADMIN" | string;
+  createdAt: string;
+  lastOrderAt?: string | null;
+  orderCount: number;
+  totalSpent: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -311,7 +330,10 @@ export interface ApiCallable {
   <T>(path: string, options?: FetchOptions): Promise<T>;
 
   // Catalog
-  getProducts: (params?: Record<string, any>) => Promise<ProductListResponse>;
+  getProducts: (
+    params?: Record<string, any>,
+    options?: { signal?: AbortSignal }
+  ) => Promise<ProductListResponse>;
   getProductBySlug: (slug: string) => Promise<{ product: Product; related?: Product[] }>;
   getProductReviews: (productId: string) => Promise<{ reviews: Review[]; total: number }>;
   submitReview: (
@@ -321,6 +343,9 @@ export interface ApiCallable {
   getCategories: () => Promise<{ categories: Category[] }>;
   getFacets: () => Promise<CatalogFacets>;
 
+  // Cart
+  getCart: () => Promise<CartView>;
+
   // Orders
   getOrders: () => Promise<{ orders: Order[] }>;
   getOrder: (id: string) => Promise<{ order: Order }>;
@@ -328,6 +353,7 @@ export interface ApiCallable {
     shippingAddress: Partial<Address>;
     customerNote?: string;
     note?: string;
+    saveAddress?: boolean;
     items: { productId: string; quantity: number }[];
   }) => Promise<{ order: Order }>;
   cancelOrder: (id: string) => Promise<{ message: string }>;
@@ -353,8 +379,8 @@ export interface ApiCallable {
   createAddress: (data: Partial<Address>) => Promise<{ address: Address }>;
   deleteAddress: (id: string) => Promise<{ message: string }>;
 
-  // Security
-  changePassword: (oldPass: string, newPass: string) => Promise<{ message: string }>;
+  // Profile
+  updateProfile: (data: { name: string; email?: string }) => Promise<{ user: User; message?: string }>;
 
   // Blog
   getBlogPosts: (params?: { tag?: string; search?: string; limit?: number; offset?: number }) => Promise<{ posts: BlogPost[]; total: number }>;
@@ -372,14 +398,52 @@ export interface ApiCallable {
 
   // Admin
   getAdminSummary: () => Promise<AdminSummary>;
-  getAdminOrders: (params?: { status?: string; limit?: number }) => Promise<{ orders: Order[] }>;
-  updateOrderStatus: (orderId: string, status: string) => Promise<{ message: string }>;
+  getAdminOrders: (params?: {
+    status?: string;
+    search?: string;
+    userId?: string;
+    limit?: number;
+    offset?: number;
+  }) => Promise<{ orders: Order[]; total?: number }>;
+  updateOrderStatus: (orderId: string, status: string, extra?: { note?: string; trackingCode?: string }) => Promise<{ message: string }>;
   getAdminReviews: () => Promise<{ reviews: Review[] }>;
   updateReviewApproval: (reviewId: string, approved: boolean) => Promise<{ message: string }>;
+  deleteReview: (reviewId: string) => Promise<{ success: boolean }>;
   getAdminContacts: () => Promise<{ messages: ContactMessage[] }>;
   updateContactStatus: (id: string, status: string) => Promise<{ message: string }>;
+  deleteContact: (id: string) => Promise<{ success: boolean }>;
+  getAdminCustomers: () => Promise<{ customers: AdminCustomer[] }>;
+  getAdminProducts: (params?: {
+    search?: string;
+    status?: "all" | "active" | "archived";
+    limit?: number;
+    offset?: number;
+  }) => Promise<ProductListResponse>;
   createProduct: (data: any) => Promise<{ product: Product }>;
-  updateProduct: (id: string, data: any) => Promise<{ id: string; success: boolean }>;
+  updateProduct: (id: string, data: any) => Promise<{ id: string; product?: Product; success: boolean }>;
+  deleteProduct: (id: string) => Promise<{ success: boolean; action?: string; message?: string }>;
+  uploadImage: (file: File) => Promise<{ success: boolean; url: string; filename: string }>;
+  getAdminPosts: (params?: { q?: string; status?: string }) => Promise<BlogPost[]>;
+  createAdminPost: (data: {
+    title: string;
+    slug?: string;
+    excerpt?: string;
+    content: string;
+    coverImage?: string;
+    tags?: string[];
+    published?: boolean;
+  }) => Promise<{ success: boolean; id: string; slug: string }>;
+  updateAdminPost: (id: string, data: {
+    title: string;
+    slug?: string;
+    excerpt?: string;
+    content: string;
+    coverImage?: string;
+    tags?: string[];
+    published?: boolean;
+  }) => Promise<{ success: boolean; id: string }>;
+  togglePostPublish: (id: string, published: boolean) => Promise<{ success: boolean; published: boolean }>;
+  deleteAdminPost: (id: string) => Promise<{ success: boolean }>;
 }
 
 const apiInstance = (async <T>(path: string, options: FetchOptions = {}): Promise<T> => {
@@ -390,7 +454,7 @@ const apiInstance = (async <T>(path: string, options: FetchOptions = {}): Promis
 function normalizeProduct(p: any): Product {
   const title = p.title || p.name || "دست‌سازه چوبی";
   const name = p.name || title;
-  const ratingNum = typeof p.rating === "number" ? p.rating : (p.rating?.average ?? 5);
+  const ratingNum = typeof p.rating === "number" ? p.rating : (p.rating?.average ?? 0);
   const ratingObj = typeof p.rating === "object" ? p.rating : { average: ratingNum, count: p.reviewsCount ?? 0 };
   const images = p.images || (p.imageUrl ? [{ id: "1", url: p.imageUrl, alt: title }] : []);
 
@@ -444,6 +508,58 @@ function normalizeAddress(a: any): Address {
   };
 }
 
+// Normalizing helper for Cart
+function normalizeCartItem(item: any): CartItem {
+  const raw = item?.product || {};
+  const title = raw.title || raw.name || "دست‌سازه چوبی";
+  const images =
+    raw.images && raw.images.length > 0
+      ? raw.images
+      : raw.imageUrl
+        ? [{ url: raw.imageUrl, alt: title }]
+        : [];
+
+  return {
+    ...item,
+    product: {
+      ...raw,
+      title,
+      name: raw.name || title,
+      imageUrl: raw.imageUrl || images[0]?.url || "/images/workshop.webp",
+      images,
+      rating: typeof raw.rating === "number" ? raw.rating : (raw.rating?.average ?? 0),
+    },
+  };
+}
+
+export function normalizeCart(payload: any): CartView {
+  const items: CartItem[] = (payload?.items || []).map(normalizeCartItem);
+  const summary = payload?.summary || {};
+  const subtotal = payload?.subtotal ?? summary.subtotal ?? 0;
+  const shipping = payload?.shipping ?? summary.shipping ?? 0;
+  const itemCount =
+    payload?.itemCount ??
+    summary.itemCount ??
+    items.reduce((sum, item) => sum + item.quantity, 0);
+  const total = payload?.total ?? summary.total ?? subtotal + shipping;
+
+  return {
+    ...payload,
+    items,
+    subtotal,
+    shipping,
+    total,
+    itemCount,
+    summary: {
+      subtotal,
+      shipping,
+      total,
+      itemCount,
+      freeShippingThreshold: summary.freeShippingThreshold ?? 5_000_000,
+    },
+  };
+}
+
 // Normalizing helper for Review
 function normalizeReview(r: any): Review {
   return {
@@ -463,7 +579,7 @@ function normalizeBlogPost(b: any): BlogPost {
 }
 
 // Attach catalog methods
-apiInstance.getProducts = async (params = {}) => {
+apiInstance.getProducts = async (params = {}, options: { signal?: AbortSignal } = {}) => {
   const query = new URLSearchParams();
   for (const [k, v] of Object.entries(params)) {
     if (v !== undefined && v !== null && v !== "") {
@@ -471,7 +587,9 @@ apiInstance.getProducts = async (params = {}) => {
     }
   }
   const qs = query.toString();
-  const res = await request<any>(`/products${qs ? `?${qs}` : ""}`);
+  const res = await request<any>(`/products${qs ? `?${qs}` : ""}`, {
+    signal: options.signal,
+  });
   return {
     ...res,
     items: (res.items || []).map(normalizeProduct),
@@ -513,9 +631,9 @@ apiInstance.getFacets = async () => {
 // Attach order methods
 apiInstance.getOrders = async () => {
   const res = await request<any>("/orders");
+  const rawList = Array.isArray(res) ? res : (res.orders || []);
   return {
-    ...res,
-    orders: (res.orders || []).map(normalizeOrder),
+    orders: rawList.map(normalizeOrder),
   };
 };
 
@@ -556,7 +674,8 @@ apiInstance.verifyPayment = async (data) => {
     body: JSON.stringify({
       ...data,
       trackId,
-      gateway: data.gateway || "zarinpal",
+      // Leave the gateway empty so the backend resolves it from the stored transaction.
+      gateway: data.gateway,
     }),
   });
   return {
@@ -579,8 +698,9 @@ apiInstance.trackOrder = async (code: string, phone?: string) => {
 // Attach address methods
 apiInstance.getAddresses = async () => {
   const res = await request<any>("/addresses");
+  const rawList = Array.isArray(res) ? res : (res.addresses || []);
   return {
-    addresses: (res.addresses || []).map(normalizeAddress),
+    addresses: rawList.map(normalizeAddress),
   };
 };
 
@@ -589,18 +709,24 @@ apiInstance.createAddress = async (data) => {
     method: "POST",
     body: JSON.stringify(data),
   });
-  return { address: normalizeAddress(res.address) };
+  return { address: normalizeAddress(res.address || res) };
 };
 
 apiInstance.deleteAddress = async (id: string) => {
   return request(`/addresses/${id}`, { method: "DELETE" });
 };
 
-// Security
-apiInstance.changePassword = async (oldPassword, newPassword) => {
-  return request("/auth/change-password", {
-    method: "POST",
-    body: JSON.stringify({ oldPassword, newPassword }),
+// Cart
+apiInstance.getCart = async () => {
+  const res = await request<any>("/cart");
+  return normalizeCart(res);
+};
+
+// Profile
+apiInstance.updateProfile = async (data) => {
+  return request("/auth/profile", {
+    method: "PATCH",
+    body: JSON.stringify(data),
   });
 };
 
@@ -668,10 +794,10 @@ apiInstance.getAdminOrders = async (params = {}) => {
   };
 };
 
-apiInstance.updateOrderStatus = async (orderId, status) => {
+apiInstance.updateOrderStatus = async (orderId, status, extra = {}) => {
   return request(`/admin/orders/${orderId}/status`, {
     method: "PATCH",
-    body: JSON.stringify({ status }),
+    body: JSON.stringify({ status, ...extra }),
   });
 };
 
@@ -690,6 +816,12 @@ apiInstance.updateReviewApproval = async (reviewId, approved) => {
   });
 };
 
+apiInstance.deleteReview = async (reviewId) => {
+  return request(`/admin/reviews/${reviewId}`, {
+    method: "DELETE",
+  });
+};
+
 apiInstance.getAdminContacts = async () => {
   const res = await request<any>("/admin/contact");
   const rawList = Array.isArray(res) ? res : (res.messages || res.items || []);
@@ -705,18 +837,105 @@ apiInstance.updateContactStatus = async (id, status) => {
   });
 };
 
+apiInstance.deleteContact = async (id) => {
+  return request(`/admin/contact/${id}`, {
+    method: "DELETE",
+  });
+};
+
+apiInstance.getAdminCustomers = async () => {
+  const res = await request<any>("/admin/customers");
+  const rawList = Array.isArray(res) ? res : (res.customers || res.items || []);
+  return {
+    customers: rawList,
+  };
+};
+
+apiInstance.getAdminProducts = async (params = {}) => {
+  const query = new URLSearchParams();
+  for (const [k, v] of Object.entries(params)) {
+    if (v !== undefined && v !== null && v !== "") query.set(k, String(v));
+  }
+  const qs = query.toString();
+  const res = await request<any>(`/admin/products${qs ? `?${qs}` : ""}`);
+  return {
+    items: (res.items || []).map(normalizeProduct),
+    total: res.total ?? 0,
+    limit: res.limit ?? 0,
+    offset: res.offset ?? 0,
+    hasMore: (res.offset ?? 0) + (res.items || []).length < (res.total ?? 0),
+  };
+};
+
 apiInstance.createProduct = async (data) => {
   const res = await request<any>("/admin/products", {
     method: "POST",
     body: JSON.stringify(data),
   });
-  return { product: normalizeProduct(res.product) };
+  const p = res.product || res;
+  return { product: normalizeProduct(p) };
 };
 
 apiInstance.updateProduct = async (id: string, data: any) => {
-  return request(`/products/${id}`, {
+  const res = await request<any>(`/admin/products/${id}`, {
     method: "PATCH",
     body: JSON.stringify(data),
+  });
+  return {
+    id,
+    product: res.product ? normalizeProduct(res.product) : undefined,
+    success: res.success ?? true,
+  };
+};
+
+apiInstance.deleteProduct = async (id: string) => {
+  return request(`/admin/products/${id}`, {
+    method: "DELETE",
+  });
+};
+
+apiInstance.uploadImage = async (file: File) => {
+  const formData = new FormData();
+  formData.append("image", file);
+  return request<{ success: boolean; url: string; filename: string }>("/admin/upload", {
+    method: "POST",
+    body: formData,
+  });
+};
+
+apiInstance.getAdminPosts = async (params = {}) => {
+  const query = new URLSearchParams();
+  for (const [k, v] of Object.entries(params)) {
+    if (v !== undefined && v !== null && v !== "") query.set(k, String(v));
+  }
+  const qs = query.toString();
+  return request<BlogPost[]>(`/admin/blog/posts${qs ? `?${qs}` : ""}`);
+};
+
+apiInstance.createAdminPost = async (data) => {
+  return request<{ success: boolean; id: string; slug: string }>("/admin/blog/posts", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+};
+
+apiInstance.updateAdminPost = async (id, data) => {
+  return request<{ success: boolean; id: string }>(`/admin/blog/posts/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+};
+
+apiInstance.togglePostPublish = async (id, published) => {
+  return request<{ success: boolean; published: boolean }>(`/admin/blog/posts/${id}/publish`, {
+    method: "PATCH",
+    body: JSON.stringify({ published }),
+  });
+};
+
+apiInstance.deleteAdminPost = async (id) => {
+  return request<{ success: boolean }>(`/admin/blog/posts/${id}`, {
+    method: "DELETE",
   });
 };
 

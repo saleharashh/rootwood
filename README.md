@@ -143,20 +143,30 @@ The compiled static assets are generated in `apps/web/dist`:
 1. Copy the contents of `apps/web/dist/` into your server's `public_html/`.
 2. Copy the `backend/` directory to `public_html/api/` (or a subfolder of your choice).
 3. Ensure `.htaccess` is present in both `public_html/` (for SPA client routing) and `public_html/api/` (for PHP API rewriting).
-4. Create a MySQL database in cPanel and import `backend/schema.sql`.
-5. Create `public_html/api/.env` with your production database credentials, a 32+ character `JWT_SECRET`, and payment gateway merchant keys.
+4. Create a MySQL database in cPanel, attach the DB user with **All Privileges**, and import `backend/schema.sql` via phpMyAdmin.
+5. Open `unzip.php` and use the **«تست اتصال دیتابیس»** button to verify the credentials before saving; it reports access-denied, unknown-database, and host/socket errors with hints.
+6. Create `public_html/api/.env` with your production database credentials, a 32+ character `JWT_SECRET`, and payment gateway merchant keys (or let `unzip.php` write them).
 
 ---
+
+## 🔐 Admin Login (Temporary Password)
+
+Until the SMS panel is connected, admins can sign in from the **«ورود مدیران با رمز عبور»** link in the login dialog using a number from `ADMIN_PHONES` and the password in `ADMIN_PASSWORD` (`backend/.env`).
+
+- Set `ADMIN_PASSWORD=R@@tw@@d5432` (current default) or, preferably, `ADMIN_PASSWORD_HASH` with a bcrypt hash.
+- On cPanel, use the **«ورود مدیر با شماره و رمز عبور»** card in `unzip.php`; it writes the values to `api/.env` for you (the File Manager hides dotfiles by default).
+- Set both to empty to disable password login and require OTP only.
+- Failed attempts are limited to 5 per phone per 10 minutes.
 
 ## 👤 Demo Accounts
 
 The seed script initializes the following demo credentials:
 
-| Role | Email / Phone | Password |
+| Role | Phone | Password |
 | --- | --- | --- |
-| **Admin** | `hello@craftedroot.com` | `CraftedRoot!2026` |
-| **Customer** | `arash@craftedroot.com` | `CraftedRoot!2026` |
-| **Customer** | `09123456789` | OTP Login (`123456` in dev mode) |
+| **Admin** | `09131534532` | `R@@tw@@d5432` (temporary, until SMS is connected) |
+| **Admin** | `09134398431` | `R@@tw@@d5432` (temporary, until SMS is connected) |
+| **Customer** | `09122222222` | OTP login (in development the code is returned in the API response) |
 
 ---
 

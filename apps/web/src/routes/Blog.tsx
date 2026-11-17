@@ -3,6 +3,7 @@ import { Link } from "wouter";
 import { BookOpen, Calendar, Clock, Search, Tag } from "lucide-react";
 import { api, type BlogPost } from "@/lib/api";
 import { formatJalaliDate, toPersianDigits } from "@/lib/price";
+import { Seo } from "@/components/seo";
 
 export function Blog() {
   const [posts, setPosts] = useState<BlogPost[]>([]);
@@ -39,30 +40,36 @@ export function Blog() {
 
   return (
     <div className="bg-stone-50/50 min-h-[80vh] pb-20">
-      {/* Hero header */}
-      <div className="bg-stone-900 text-stone-100 py-16 px-4 sm:px-6 lg:px-8 border-b border-stone-800">
+      <Seo
+        title={selectedTag ? `مجلهٔ چوب: ${selectedTag}` : "مجلهٔ چوب و راهنمای نگهداری"}
+        description="مقالات تخصصی درباره گونه‌های چوب ایران، اتصالات نجاری سنتی، روغن‌های گیاهی و نگهداری مبلمان چوبی."
+        path="/blog"
+        noindex={Boolean(selectedTag || search)}
+      />
+      {/* Hero header (60-30-10 Warm Atelier Banner) */}
+      <div className="border-b border-[#e8ded3] bg-gradient-to-b from-[#f4ece4] via-[#f7f2eb] to-[#faf8f5] py-14 sm:py-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto text-center space-y-4">
-          <span className="text-xs font-bold text-amber-400 tracking-wider uppercase">
+          <span className="inline-block text-xs font-bold text-[#b85d19] bg-[#fdf1e7] border border-[#edd1bc] px-3.5 py-1 rounded-full tracking-wide">
             مجله و دانشنامه هنر چوب
           </span>
-          <h1 className="text-3xl sm:text-4xl font-extrabold font-serif">
+          <h1 className="text-3xl sm:text-4xl font-extrabold font-serif text-[#2b1e17] leading-tight">
             روایت ریشه‌ها و رازهای دست‌سازه‌های چوبی
           </h1>
-          <p className="text-stone-300 text-sm sm:text-base leading-relaxed max-w-2xl mx-auto">
+          <p className="text-[#655347] text-sm sm:text-base leading-relaxed max-w-2xl mx-auto font-light">
             مقالات تخصصی درباره گونه‌های بومی چوب ایران، تکنیک‌های اتصالات نجاری سنتی، روغن‌های گیاهی و راهنمای چیدمان دکوراسیون ماندگار.
           </p>
 
           {/* Search bar */}
-          <div className="max-w-md mx-auto pt-4">
+          <div className="max-w-md mx-auto pt-3">
             <div className="relative">
               <input
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="جستجو در مقالات و راهنماهای چوب..."
-                className="w-full bg-stone-800 text-stone-100 placeholder-stone-400 text-xs sm:text-sm pl-4 pr-10 py-3 rounded-2xl border border-stone-700 focus:outline-none focus:border-amber-500"
+                className="w-full bg-white text-[#2b1e17] placeholder-[#8c796e] text-xs sm:text-sm pl-4 pr-10 py-3 rounded-2xl border border-[#e8ded3] shadow-2xs focus:outline-none focus:border-[#b85d19]"
               />
-              <Search className="w-4 h-4 text-stone-400 absolute right-3.5 top-1/2 -translate-y-1/2" />
+              <Search className="w-4 h-4 text-[#8c796e] absolute right-3.5 top-1/2 -translate-y-1/2" />
             </div>
           </div>
         </div>

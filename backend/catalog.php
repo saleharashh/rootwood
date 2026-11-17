@@ -109,7 +109,17 @@ function handle_catalog(string $subpath, string $method): void {
         $limit = max(1, min(100, (int)($_GET['limit'] ?? 24)));
         $offset = max(0, (int)($_GET['offset'] ?? 0));
 
-        $where = ['p.is_active = 1'];
+        $includeInactive = isset($_GET['includeInactive'])
+            && ($_GET['includeInactive'] === '1' || $_GET['includeInactive'] === 'true');
+
+        if ($includeInactive) {
+            $authUser = get_auth_user();
+            if (!$authUser || $authUser['role'] !== 'ADMIN') {
+                $includeInactive = false;
+            }
+        }
+
+        $where = $includeInactive ? ['1=1'] : ['p.is_active = 1'];
         $params = [];
 
         if ($search !== '') {
@@ -274,7 +284,21 @@ function handle_catalog(string $subpath, string $method): void {
             }
         }
 
-        json_response(['id' => $id, 'slug' => $slug, 'success' => true], 201);
+        $fStmt = $pdo->prepare("
+            SELECT p.*, c.name AS category_name, c.slug AS category_slug
+            FROM products p
+            LEFT JOIN categories c ON p.category_id = c.id
+            WHERE p.id = ?
+        ");
+        $fStmt->execute([$id]);
+        $row = $fStmt->fetch();
+
+        json_response([
+            'id' => $id,
+            'slug' => $slug,
+            'product' => $row ? format_product_row($row, $pdo) : ['id' => $id, 'slug' => $slug],
+            'success' => true
+        ], 201);
     }
 
     // 7. Admin Update Product

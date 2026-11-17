@@ -19,7 +19,11 @@ export function CheckoutCallback() {
       const searchParams = new URLSearchParams(window.location.search);
       const authority = searchParams.get("Authority") || searchParams.get("authority") || "";
       const trackId = searchParams.get("trackId") || "";
-      const status = searchParams.get("Status") || searchParams.get("status") || "";
+      const bankSuccess = searchParams.get("success");
+      const status =
+        searchParams.get("Status") ||
+        searchParams.get("status") ||
+        (bankSuccess === "1" ? "OK" : bankSuccess === "0" ? "NOK" : "");
       const orderId = searchParams.get("orderId") || "";
       const gateway = searchParams.get("gateway") || "";
 

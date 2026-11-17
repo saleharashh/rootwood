@@ -1,155 +1,177 @@
 import { Link } from "wouter";
-import { ArrowLeft, ArrowRight, Minus, Plus, ShieldCheck, Trash2, Truck } from "lucide-react";
+import { ArrowLeft, ArrowRight, Minus, Plus, ShoppingBag, Trash2, Truck } from "lucide-react";
 import { useCart } from "@/components/cart-provider";
 import { formatPriceToman, toPersianDigits } from "@/lib/price";
+import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/empty-state";
+import { PriceSummary } from "@/components/price-summary";
 
 export function CartPage() {
-  const { cart, updateQuantity, removeItem, clearCart, loading } = useCart();
+  const {
+    cart,
+    updateQuantity,
+    removeItem,
+    clearCart,
+    loading,
+    initialLoading,
+    subtotal,
+    shipping,
+    total,
+    freeShippingThreshold,
+  } = useCart();
 
   const items = cart?.items || [];
-  const subtotal = cart?.summary?.subtotal ?? 0;
-  const shipping = cart?.summary?.shipping ?? 0;
-  const total = cart?.summary?.total ?? subtotal + shipping;
-  const freeShippingThreshold = 20000000; // 20M Toman
   const remainingForFreeShipping = Math.max(0, freeShippingThreshold - subtotal);
-  const freeShippingPercent = Math.min(100, Math.round((subtotal / freeShippingThreshold) * 100));
+  const freeShippingPercent = Math.min(
+    100,
+    Math.round((subtotal / Math.max(freeShippingThreshold, 1)) * 100)
+  );
+
+  if (initialLoading) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-[var(--color-accent)]/20 border-t-[var(--color-accent)]" />
+      </div>
+    );
+  }
 
   if (items.length === 0) {
     return (
-      <div className="bg-stone-50/50 min-h-[60vh] flex items-center justify-center py-20">
-        <div className="max-w-md mx-auto px-4 text-center space-y-5">
-          <div className="w-20 h-20 bg-amber-50 rounded-full flex items-center justify-center mx-auto text-amber-900 border border-amber-200">
-            <Trash2 className="w-8 h-8 opacity-40" />
-          </div>
-          <h1 className="text-2xl font-bold text-stone-900 font-serif">سبد خرید شما خالی است</h1>
-          <p className="text-stone-600 text-sm leading-relaxed">
-            شما هنوز هیچ دست‌سازه‌ای به سبد خرید خود اضافه نکرده‌اید. کاتالوگ آثار چوبی ما را مرور کنید و اثر دلخواهتان را بیابید.
-          </p>
-          <Link
-            href="/products"
-            className="inline-flex items-center gap-2 bg-amber-900 hover:bg-amber-800 text-white px-6 py-3 rounded-xl font-medium shadow-sm transition"
-          >
-            مشاهده مجموعه آثار
-            <ArrowLeft className="w-4 h-4" />
-          </Link>
-        </div>
+      <div className="mx-auto max-w-2xl px-4 py-16">
+        <EmptyState
+          icon={<ShoppingBag className="h-7 w-7" />}
+          title="سبد خرید شما خالی است"
+          description="هنوز اثری به سبد خرید اضافه نکرده‌اید. کاتالوگ دست‌سازه‌های چوبی کارگاه را ببینید."
+          action={
+            <Link href="/products">
+              <Button className="gap-2">
+                مشاهدهٔ کاتالوگ آثار
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+            </Link>
+          }
+        />
       </div>
     );
   }
 
   return (
-    <div className="bg-stone-50/50 min-h-[75vh] pb-20">
-      {/* Breadcrumb */}
-      <div className="border-b border-stone-200 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5">
-          <nav className="flex items-center gap-2 text-xs sm:text-sm text-stone-500">
-            <Link href="/" className="hover:text-amber-900 transition">خانه</Link>
+    <div className="min-h-[75vh] pb-16">
+      <div className="border-b border-[var(--color-border)] bg-white">
+        <div className="mx-auto max-w-7xl px-4 py-3 text-xs text-[var(--color-ink-muted)] sm:px-6 lg:px-8">
+          <nav className="flex items-center gap-2">
+            <Link href="/" className="hover:text-[var(--color-accent)]">
+              خانه
+            </Link>
             <span>/</span>
-            <span className="text-stone-900 font-medium">سبد خرید</span>
+            <span className="font-medium text-[var(--color-ink)]">سبد خرید</span>
           </nav>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
-        <div className="flex items-center justify-between mb-8">
+      <div className="mx-auto max-w-7xl px-4 pt-8 sm:px-6 lg:px-8">
+        <div className="mb-6 flex items-end justify-between">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-stone-900 font-serif">سبد خرید دست‌سازه‌ها</h1>
-            <p className="text-xs text-stone-500 mt-1">
-              شما {toPersianDigits(items.length)} عنوان محصول در سبد خود دارید
+            <h1 className="text-2xl font-extrabold text-[var(--color-ink)] font-serif">
+              سبد خرید
+            </h1>
+            <p className="mt-1 text-xs text-[var(--color-ink-muted)]">
+              {toPersianDigits(items.length)} عنوان کالا در سبد شما
             </p>
           </div>
           <button
             type="button"
             onClick={clearCart}
             disabled={loading}
-            className="text-xs text-stone-500 hover:text-red-700 transition flex items-center gap-1 disabled:opacity-50"
+            className="flex items-center gap-1 text-xs text-[var(--color-ink-muted)] transition hover:text-red-700 disabled:opacity-50"
           >
-            <Trash2 className="w-3.5 h-3.5" />
-            خالی کردن کل سبد
+            <Trash2 className="h-3.5 w-3.5" />
+            خالی کردن سبد
           </button>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* Items list - 8 cols */}
-          <div className="lg:col-span-8 space-y-4">
-            {/* Free shipping banner */}
-            <div className="bg-white p-4 rounded-2xl border border-stone-200 shadow-sm space-y-2">
-              <div className="flex items-center justify-between text-xs sm:text-sm">
-                <span className="flex items-center gap-2 text-stone-700 font-medium">
-                  <Truck className="w-4 h-4 text-amber-800" />
+        <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-12">
+          <div className="space-y-4 lg:col-span-8">
+            <div className="rounded-2xl border border-[var(--color-border)] bg-white p-4">
+              <div className="flex items-center justify-between text-xs">
+                <span className="flex items-center gap-2 font-medium text-[var(--color-ink-soft)]">
+                  <Truck className="h-4 w-4 text-[var(--color-accent)]" />
                   {remainingForFreeShipping > 0 ? (
                     <>
                       با افزودن{" "}
-                      <strong className="text-amber-900 font-bold">
+                      <strong className="text-[var(--color-accent)]">
                         {formatPriceToman(remainingForFreeShipping)}
                       </strong>{" "}
-                      دیگر، ارسال سفارش شما رایگان خواهد شد!
+                      دیگر ارسال رایگان می‌شود
                     </>
                   ) : (
-                    <span className="text-emerald-700 font-bold">
-                      ارسال این سفارش برای شما کاملاً رایگان است!
+                    <span className="font-bold text-[var(--color-success)]">
+                      ارسال این سفارش رایگان است
                     </span>
                   )}
                 </span>
-                <span className="text-xs text-stone-400 font-semibold">{toPersianDigits(freeShippingPercent)}٪</span>
+                <span className="text-[11px] text-[var(--color-ink-muted)]">
+                  {toPersianDigits(freeShippingPercent)}٪
+                </span>
               </div>
-              <div className="w-full bg-stone-100 rounded-full h-2 overflow-hidden">
+              <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-[var(--color-border-subtle)]">
                 <div
-                  className="bg-amber-900 h-2 rounded-full transition-all duration-500"
+                  className="h-full rounded-full bg-[var(--color-accent)] transition-all duration-500"
                   style={{ width: `${freeShippingPercent}%` }}
                 />
               </div>
             </div>
 
-            {/* List */}
-            <div className="bg-white rounded-2xl border border-stone-200 shadow-sm divide-y divide-stone-100 overflow-hidden">
+            <div className="divide-y divide-[var(--color-border-subtle)] overflow-hidden rounded-2xl border border-[var(--color-border)] bg-white">
               {items.map((item) => (
-                <div key={item.id} className="p-4 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                <div
+                  key={item.id}
+                  className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:p-5"
+                >
                   <Link
                     href={`/products/${item.product.slug}`}
-                    className="w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden bg-stone-100 border border-stone-200 shrink-0 block"
+                    className="block h-20 w-20 shrink-0 overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] sm:h-24 sm:w-24"
                   >
                     <img
-                      src={item.product.imageUrl || "/images/placeholder.jpg"}
+                      src={item.product.imageUrl || "/images/workshop.webp"}
                       alt={item.product.title}
-                      className="w-full h-full object-cover hover:scale-105 transition"
+                      className="h-full w-full object-cover transition hover:scale-105"
                     />
                   </Link>
 
-                  <div className="flex-1 min-w-0 space-y-1">
+                  <div className="min-w-0 flex-1 space-y-1">
                     <Link
                       href={`/products/${item.product.slug}`}
-                      className="font-bold text-stone-900 hover:text-amber-900 transition line-clamp-1 text-base font-serif"
+                      className="line-clamp-1 font-serif text-base font-bold text-[var(--color-ink)] hover:text-[var(--color-accent)]"
                     >
                       {item.product.title}
                     </Link>
-                    <div className="flex items-center gap-3 text-xs text-stone-500">
-                      <span>گونه چوب: {item.product.woodType || "گردو طبیعی"}</span>
-                      {item.product.category && (
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[var(--color-ink-muted)]">
+                      <span>{item.product.woodType || "چوب طبیعی"}</span>
+                      {item.product.category?.name && (
                         <>
                           <span>•</span>
                           <span>{item.product.category.name}</span>
                         </>
                       )}
                     </div>
-                    <div className="text-sm font-bold text-[#b85d19] pt-1">
+                    <div className="pt-1 text-sm font-bold text-[var(--color-accent)]">
                       {formatPriceToman(item.product.price)}
                     </div>
                   </div>
 
-                  {/* Quantity & actions */}
-                  <div className="flex items-center justify-between sm:justify-end gap-6 w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-0 border-stone-100">
-                    <div className="flex items-center border border-stone-200 rounded-xl bg-stone-50 p-1">
+                  <div className="flex w-full items-center justify-between gap-4 border-t border-[var(--color-border-subtle)] pt-3 sm:w-auto sm:justify-end sm:border-0 sm:pt-0">
+                    <div className="flex items-center rounded-xl border border-[var(--color-border)] bg-[var(--color-canvas)] p-1">
                       <button
                         type="button"
                         onClick={() => updateQuantity(item.id, item.quantity - 1)}
                         disabled={loading}
                         aria-label="کاهش تعداد"
-                        className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white text-stone-600 disabled:opacity-40 transition"
+                        className="flex h-7 w-7 items-center justify-center rounded-lg text-[var(--color-ink-soft)] transition hover:bg-white disabled:opacity-40"
                       >
-                        <Minus className="w-3.5 h-3.5" />
+                        <Minus className="h-3.5 w-3.5" />
                       </button>
-                      <span className="w-8 text-center font-bold text-sm text-stone-800">
+                      <span className="w-8 text-center text-sm font-bold text-[var(--color-ink)]">
                         {toPersianDigits(item.quantity)}
                       </span>
                       <button
@@ -157,16 +179,14 @@ export function CartPage() {
                         onClick={() => updateQuantity(item.id, item.quantity + 1)}
                         disabled={loading || item.quantity >= item.product.stock}
                         aria-label="افزایش تعداد"
-                        className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white text-stone-600 disabled:opacity-40 transition"
+                        className="flex h-7 w-7 items-center justify-center rounded-lg text-[var(--color-ink-soft)] transition hover:bg-white disabled:opacity-40"
                       >
-                        <Plus className="w-3.5 h-3.5" />
+                        <Plus className="h-3.5 w-3.5" />
                       </button>
                     </div>
 
-                    <div className="text-left min-w-[90px]">
-                      <div className="text-sm font-extrabold text-stone-900 font-serif">
-                        {formatPriceToman(item.product.price * item.quantity)}
-                      </div>
+                    <div className="min-w-[90px] text-left text-sm font-extrabold text-[var(--color-ink)]">
+                      {formatPriceToman(item.product.price * item.quantity)}
                     </div>
 
                     <button
@@ -174,78 +194,45 @@ export function CartPage() {
                       onClick={() => removeItem(item.id)}
                       disabled={loading}
                       aria-label="حذف از سبد"
-                      className="text-stone-400 hover:text-red-700 p-2 rounded-lg hover:bg-red-50 transition"
+                      className="rounded-lg p-2 text-[var(--color-ink-muted)] transition hover:bg-red-50 hover:text-red-700"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="h-4 w-4" />
                     </button>
                   </div>
                 </div>
               ))}
             </div>
 
-            <div className="flex justify-between items-center pt-2">
-              <Link
-                href="/products"
-                className="inline-flex items-center gap-2 text-xs font-semibold text-stone-600 hover:text-amber-900"
-              >
-                <ArrowRight className="w-4 h-4" />
-                ادامه خرید و مشاهده سایر آثار
-              </Link>
-            </div>
+            <Link
+              href="/products"
+              className="inline-flex items-center gap-2 text-xs font-semibold text-[var(--color-ink-soft)] hover:text-[var(--color-accent)]"
+            >
+              <ArrowRight className="h-4 w-4" />
+              ادامهٔ خرید
+            </Link>
           </div>
 
-          {/* Summary sidebar - 4 cols */}
-          <div className="lg:col-span-4">
-            <div className="bg-white p-6 rounded-2xl border border-stone-200 shadow-sm space-y-5 sticky top-24">
-              <h2 className="text-lg font-bold text-stone-900 font-serif border-b border-stone-100 pb-3">
-                خلاصه پیش‌فاکتور
+          <aside className="lg:col-span-4">
+            <div className="sticky top-24 space-y-5 rounded-2xl border border-[var(--color-border)] bg-white p-6">
+              <h2 className="border-b border-[var(--color-border-subtle)] pb-3 font-serif text-lg font-bold text-[var(--color-ink)]">
+                خلاصهٔ سفارش
               </h2>
 
-              <div className="space-y-3 text-sm">
-                <div className="flex justify-between text-stone-600">
-                  <span>مجموع ارزش دست‌سازه‌ها:</span>
-                  <span className="font-semibold text-stone-900">{formatPriceToman(subtotal)}</span>
-                </div>
+              <PriceSummary subtotal={subtotal} shipping={shipping} total={total} />
 
-                <div className="flex justify-between text-stone-600">
-                  <span>هزینه بسته‌بندی و ارسال اختصاصی:</span>
-                  <span className="font-semibold">
-                    {shipping === 0 ? (
-                      <span className="text-emerald-700 font-bold">رایگان</span>
-                    ) : (
-                      formatPriceToman(shipping)
-                    )}
-                  </span>
-                </div>
-
-                <div className="pt-3 border-t border-stone-100 flex justify-between items-baseline">
-                  <span className="font-bold text-stone-900">مبلغ نهایی قابل پرداخت:</span>
-                  <span className="text-2xl font-extrabold text-[#b85d19] font-serif">
-                    {formatPriceToman(total)}
-                  </span>
-                </div>
-              </div>
-
-              <Link
-                href="/checkout"
-                className="w-full bg-amber-900 hover:bg-amber-800 text-white font-semibold py-3.5 px-6 rounded-xl shadow-sm transition flex items-center justify-center gap-2 text-center"
-              >
-                تکمیل سفارش و تسویه حساب
-                <ArrowLeft className="w-4 h-4" />
+              <Link href="/checkout" className="block">
+                <Button className="w-full gap-2">
+                  تکمیل مشخصات و ثبت سفارش
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
               </Link>
 
-              <div className="pt-2 text-xs text-stone-500 space-y-2 border-t border-stone-100">
-                <div className="flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4 text-amber-800 shrink-0" />
-                  <span>تضمین اصالت چوب و اتصالات دستی</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Truck className="w-4 h-4 text-amber-800 shrink-0" />
-                  <span>بسته‌بندی ایمن چوبی ضد ضربه</span>
-                </div>
-              </div>
+              <p className="text-[11px] leading-relaxed text-[var(--color-ink-muted)]">
+                پس از ثبت سفارش، کد پیگیری نمایش داده می‌شود و هماهنگی پرداخت از طریق ایتا انجام
+                می‌گیرد.
+              </p>
             </div>
-          </div>
+          </aside>
         </div>
       </div>
     </div>

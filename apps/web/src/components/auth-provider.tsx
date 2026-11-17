@@ -1,15 +1,23 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { api, getStoredToken, setStoredToken, User } from "@/lib/api";
+import { isPlaceholderUserName } from "@/lib/validation";
 import { useToast } from "./toast-provider";
+
+export interface VerifyOtpResult {
+  user: User;
+  isNewUser?: boolean;
+  profileComplete?: boolean;
+}
 
 interface AuthContextValue {
   user: User | null;
   loading: boolean;
   isAuthenticated: boolean;
-  loginWithPassword: (email: string, pass: string) => Promise<void>;
-  registerWithPassword: (name: string, email: string, pass: string, phone?: string) => Promise<void>;
-  sendOtp: (identifier: string) => Promise<{ code?: string; expiresInSeconds: number; message?: string }>;
-  verifyOtp: (identifier: string, code: string, name?: string) => Promise<void>;
+  isProfileComplete: boolean;
+  sendOtp: (phone: string) => Promise<{ code?: string; expiresInSeconds: number; message?: string }>;
+  verifyOtp: (phone: string, code: string, name?: string) => Promise<VerifyOtpResult>;
+  adminLogin: (phone: string, password: string) => Promise<VerifyOtpResult>;
+  updateProfile: (name: string, email?: string) => Promise<User>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
@@ -44,53 +52,69 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     refreshUser();
   }, [refreshUser]);
 
-  const mergeCartAfterLogin = async () => {
-    try {
-      await api("/cart/merge", { method: "POST" });
-    } catch {}
-  };
-
-  const loginWithPassword = async (email: string, pass: string) => {
-    const res = await api<{ accessToken: string; user: User }>("/auth/login", {
-      method: "POST",
-      body: JSON.stringify({ email, password: pass }),
-    });
-    setStoredToken(res.accessToken);
-    setUser(res.user);
-    toast(`خوش آمدید، ${res.user.name}`, "success");
-    await mergeCartAfterLogin();
-  };
-
-  const registerWithPassword = async (name: string, email: string, pass: string, phone?: string) => {
-    const res = await api<{ accessToken: string; user: User }>("/auth/register", {
-      method: "POST",
-      body: JSON.stringify({ name, email, password: pass, phone }),
-    });
-    setStoredToken(res.accessToken);
-    setUser(res.user);
-    toast("حساب کاربری با موفقیت ساخته شد", "success");
-    await mergeCartAfterLogin();
-  };
-
-  const sendOtp = async (identifier: string) => {
+  const sendOtp = async (phone: string) => {
     return api<{ success: boolean; message: string; code?: string; expiresInSeconds: number }>(
       "/auth/send-otp",
       {
         method: "POST",
-        body: JSON.stringify({ identifier }),
+        body: JSON.stringify({ identifier: phone, phone }),
       }
     );
   };
 
-  const verifyOtp = async (identifier: string, code: string, name?: string) => {
-    const res = await api<{ accessToken: string; user: User }>("/auth/verify-otp", {
+  const verifyOtp = async (phone: string, code: string, name?: string): Promise<VerifyOtpResult> => {
+    const res = await api<{
+      accessToken: string;
+      user: User;
+      isNewUser?: boolean;
+      profileComplete?: boolean;
+    }>("/auth/verify-otp", {
       method: "POST",
-      body: JSON.stringify({ identifier, code, name }),
+      body: JSON.stringify({ identifier: phone, phone, code, name }),
     });
     setStoredToken(res.accessToken);
     setUser(res.user);
     toast(`خوش آمدید، ${res.user.name}`, "success");
-    await mergeCartAfterLogin();
+    return {
+      user: res.user,
+      isNewUser: res.isNewUser,
+      profileComplete: res.profileComplete ?? !isPlaceholderUserName(res.user.name),
+    };
+  };
+
+  /**
+   * Temporary manager login with an allowlisted admin phone + password.
+   * Used until the SMS/OTP panel is connected.
+   */
+  const adminLogin = async (phone: string, password: string): Promise<VerifyOtpResult> => {
+    const res = await api<{
+      accessToken: string;
+      user: User;
+      isNewUser?: boolean;
+      profileComplete?: boolean;
+    }>("/auth/admin-login", {
+      method: "POST",
+      body: JSON.stringify({ identifier: phone, phone, password }),
+    });
+    setStoredToken(res.accessToken);
+    setUser(res.user);
+    toast(`خوش آمدید، ${res.user.name}`, "success");
+    return {
+      user: res.user,
+      isNewUser: res.isNewUser,
+      profileComplete: res.profileComplete ?? !isPlaceholderUserName(res.user.name),
+    };
+  };
+
+  const updateProfile = async (name: string, email?: string): Promise<User> => {
+    const payload: { name: string; email?: string } = { name };
+    if (email !== undefined) {
+      payload.email = email;
+    }
+    const res = await api.updateProfile(payload);
+    setUser(res.user);
+    toast(res.message || "اطلاعات کاربری با موفقیت ثبت شد", "success");
+    return res.user;
   };
 
   const logout = async () => {
@@ -102,16 +126,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     toast("از حساب کاربری خارج شدید", "info");
   };
 
+  const isProfileComplete = !!user && !isPlaceholderUserName(user.name);
+
   return (
     <AuthContext.Provider
       value={{
         user,
         loading,
         isAuthenticated: !!user,
-        loginWithPassword,
-        registerWithPassword,
+        isProfileComplete,
         sendOtp,
         verifyOtp,
+        adminLogin,
+        updateProfile,
         logout,
         refreshUser,
       }}

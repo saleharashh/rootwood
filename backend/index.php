@@ -30,6 +30,35 @@ if ($scriptName !== '/' && $scriptName !== '\\' && str_starts_with($uri, $script
 
 $path = '/' . ltrim(preg_replace('#^/api/#', '/', $uri), '/');
 
+// 0. Dynamic sitemap (also reachable directly at /api/sitemap.php)
+if ($path === '/sitemap.xml' || $path === '/sitemap.php') {
+    require __DIR__ . '/sitemap.php';
+    exit;
+}
+
+// 0.1 Static upload serving: /uploads/*
+if (str_starts_with($path, '/uploads/')) {
+    $fileName = basename($path);
+    $filePath = __DIR__ . '/uploads/' . $fileName;
+    if (is_file($filePath)) {
+        $ext = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
+        $mimes = [
+            'jpg' => 'image/jpeg',
+            'jpeg' => 'image/jpeg',
+            'png' => 'image/png',
+            'webp' => 'image/webp',
+            'gif' => 'image/gif',
+            'svg' => 'image/svg+xml',
+        ];
+        $mime = $mimes[$ext] ?? 'application/octet-stream';
+        header("Content-Type: $mime");
+        header("Cache-Control: public, max-age=31536000, immutable");
+        readfile($filePath);
+        exit;
+    }
+    json_error('فایل تصویر یافت نشد', 404);
+}
+
 // 1. Health check
 if ($path === '/health' || $path === '') {
     $dbOk = false;

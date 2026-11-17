@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "wouter";
 import { Hammer, ShieldCheck, Truck, Sparkles, MapPin, Phone, Mail } from "lucide-react";
+import { SITE_CONTACT, FEATURE_FLAGS } from "@/lib/site-config";
 
 export function SiteFooter() {
   return (
@@ -74,9 +75,15 @@ export function SiteFooter() {
           {/* Brand Info */}
           <div className="md:col-span-2 space-y-4">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#b85d19] text-white font-bold text-sm font-serif">
-                RW
-              </div>
+              <img
+                src={SITE_CONTACT.logoSrc}
+                alt="لوگوی روت‌وود"
+                width={48}
+                height={48}
+                loading="lazy"
+                decoding="async"
+                className="h-12 w-12 object-contain shrink-0"
+              />
               <div>
                 <span className="text-base font-black text-[#2b1e17] font-serif">
                   Rootwood Group · روت‌وود
@@ -93,33 +100,35 @@ export function SiteFooter() {
           </div>
 
           {/* Quick Links */}
-          <div>
-            <h4 className="text-xs font-bold text-[var(--color-wood)] uppercase tracking-wider mb-4">
-              کاتالوگ کارگاه
-            </h4>
-            <ul className="space-y-2.5 text-xs text-[var(--color-ink-soft)]">
-              <li>
-                <Link href="/products?category=tables" className="hover:text-[var(--color-accent)]">
-                  میزهای ناهارخوری و تحریر
-                </Link>
-              </li>
-              <li>
-                <Link href="/products?category=seating" className="hover:text-[var(--color-accent)]">
-                  صندلی‌ها و نیمکت‌ها
-                </Link>
-              </li>
-              <li>
-                <Link href="/products?category=storage" className="hover:text-[var(--color-accent)]">
-                  کتابخانه و دراور چوبی
-                </Link>
-              </li>
-              <li>
-                <Link href="/products?category=decor" className="hover:text-[var(--color-accent)]">
-                  ظروف و اکسسوری‌های خراطی
-                </Link>
-              </li>
-            </ul>
-          </div>
+          {FEATURE_FLAGS.showProducts && (
+            <div>
+              <h4 className="text-xs font-bold text-[var(--color-wood)] uppercase tracking-wider mb-4">
+                کاتالوگ کارگاه
+              </h4>
+              <ul className="space-y-2.5 text-xs text-[var(--color-ink-soft)]">
+                <li>
+                  <Link href="/products?category=tables" className="hover:text-[var(--color-accent)]">
+                    میزهای ناهارخوری و تحریر
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/products?category=seating" className="hover:text-[var(--color-accent)]">
+                    صندلی‌ها و نیمکت‌ها
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/products?category=storage" className="hover:text-[var(--color-accent)]">
+                    کتابخانه و دراور چوبی
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/products?category=decor" className="hover:text-[var(--color-accent)]">
+                    ظروف و اکسسوری‌های خراطی
+                  </Link>
+                </li>
+              </ul>
+            </div>
+          )}
 
           {/* Workshop & Support */}
           <div>
@@ -127,6 +136,11 @@ export function SiteFooter() {
               دسترسی سریع
             </h4>
             <ul className="space-y-2.5 text-xs text-[var(--color-ink-soft)]">
+              <li>
+                <Link href="/gallery" className="hover:text-[var(--color-accent)]">
+                  گالری آثار اجراشده
+                </Link>
+              </li>
               <li>
                 <Link href="/about" className="hover:text-[var(--color-accent)]">
                   درباره فلسفه کارگاه
@@ -142,11 +156,13 @@ export function SiteFooter() {
                   سفارش پروژه سفارشی
                 </Link>
               </li>
-              <li>
-                <Link href="/account" className="hover:text-[var(--color-accent)]">
-                  حساب کاربری و تاریخچه سفارش‌ها
-                </Link>
-              </li>
+              {FEATURE_FLAGS.showAuth && (
+                <li>
+                  <Link href="/account" className="hover:text-[var(--color-accent)]">
+                    حساب کاربری و تاریخچه سفارش‌ها
+                  </Link>
+                </li>
+              )}
             </ul>
           </div>
 
@@ -158,15 +174,21 @@ export function SiteFooter() {
             <ul className="space-y-3 text-xs text-[var(--color-ink-soft)]">
               <li className="flex items-start gap-2">
                 <MapPin className="w-4 h-4 text-[var(--color-accent)] shrink-0 mt-0.5" />
-                <span>تهران، منطقه صنعتی کمرد، خیابان کارگاه‌های چوب، پلاک ۲۴</span>
+                <span>{SITE_CONTACT.address}</span>
               </li>
               <li className="flex items-center gap-2">
                 <Phone className="w-4 h-4 text-[var(--color-accent)] shrink-0" />
-                <span dir="ltr">۰۲۱-۷۷۸۸۹۹۰۰</span>
+                <a
+                  href={SITE_CONTACT.telHref}
+                  dir="ltr"
+                  className="font-mono font-semibold hover:text-[var(--color-accent)] transition-colors"
+                >
+                  {SITE_CONTACT.phone}
+                </a>
               </li>
               <li className="flex items-center gap-2">
                 <Mail className="w-4 h-4 text-[var(--color-accent)] shrink-0" />
-                <span>hello@craftedroot.com</span>
+                <span>{SITE_CONTACT.email}</span>
               </li>
             </ul>
           </div>

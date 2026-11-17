@@ -36,6 +36,8 @@ services:
       API_URL: http://localhost:8000/api
       PAYMENT_SIMULATION: "true"
       JWT_SECRET: craftedroot-docker-secure-jwt-secret-minimum-32-chars!
+      ADMIN_PHONES: 09131534532,09134398431
+      ADMIN_PASSWORD: R@@tw@@d5432
       CORS_ORIGINS: http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173
     volumes:
       - ./backend:/var/www/html/api

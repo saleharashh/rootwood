@@ -6,31 +6,13 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/helpers.php';
 require_once __DIR__ . '/response.php';
 
 function normalize_identifier(string $raw): array {
-    $raw = trim($raw);
-    if (filter_var($raw, FILTER_VALIDATE_EMAIL)) {
-        return ['identifier' => strtolower($raw), 'isEmail' => true];
-    }
-
-    // Convert Persian & Arabic numbers to Latin digits
-    $persian = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
-    $arabic = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
-    $digits = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
-
-    $cleaned = str_replace($persian, $digits, $raw);
-    $cleaned = str_replace($arabic, $digits, $cleaned);
-    $cleaned = preg_replace('/[^\d+]/', '', $cleaned);
-
-    if (str_starts_with($cleaned, '+98')) {
-        $cleaned = '0' . substr($cleaned, 3);
-    } elseif (str_starts_with($cleaned, '0098')) {
-        $cleaned = '0' . substr($cleaned, 4);
-    }
-
-    if (preg_match('/^09\d{9}$/', $cleaned)) {
-        return ['identifier' => $cleaned, 'isEmail' => false];
+    $phone = normalize_iranian_phone($raw);
+    if ($phone !== null) {
+        return ['identifier' => $phone, 'isEmail' => false];
     }
 
     return ['identifier' => null, 'isEmail' => false];
@@ -126,30 +108,57 @@ function revoke_otp(string $identifier): void {
 
 function send_otp_sms(string $phone, string $code): array {
     $config = require __DIR__ . '/config.php';
-    $apiKey = $config['sms']['kavenegar_api_key'];
+    $smsCfg = $config['sms'];
+    $apiKey = trim((string)$smsCfg['ir_api_key']);
 
-    if (empty($apiKey) || $apiKey === 'YOUR_KAVENEGAR_API_KEY') {
-        // Simulated in development
+    if ($apiKey === '') {
+        // No provider configured (development): the code is returned by the API in dev mode.
         return ['success' => true, 'simulated' => true];
     }
 
-    // Real Kavenegar lookup call
-    $url = "https://api.kavenegar.com/v1/$apiKey/verify/lookup.json";
-    $params = [
-        'receptor' => $phone,
-        'token' => $code,
-        'template' => 'craftedroot-verify',
+    $templateId = (int)$smsCfg['ir_template_id'];
+    if ($templateId <= 0) {
+        return ['success' => false, 'error' => 'شناسهٔ قالب پیامک SMS.ir تنظیم نشده است'];
+    }
+
+    // SMS.ir — send a pre-approved verification template.
+    $payload = [
+        'mobile' => $phone,
+        'templateId' => $templateId,
+        'parameters' => [
+            ['name' => (string)$smsCfg['ir_otp_parameter'], 'value' => $code],
+        ],
     ];
 
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $url . '?' . http_build_query($params));
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-    $res = curl_exec($ch);
-    $status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $ch = curl_init('https://api.sms.ir/v1/send/verify');
+    curl_setopt_array($ch, [
+        CURLOPT_POST => true,
+        CURLOPT_POSTFIELDS => json_encode($payload),
+        CURLOPT_HTTPHEADER => [
+            'Content-Type: application/json',
+            'Accept: application/json',
+            'x-api-key: ' . $apiKey,
+        ],
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT => 15,
+        CURLOPT_CONNECTTIMEOUT => 8,
+    ]);
+    $raw = curl_exec($ch);
+    $curlError = curl_error($ch);
+    $httpStatus = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
 
-    return ($status === 200) ? ['success' => true] : ['success' => false, 'error' => 'خطا در ارسال پیامک'];
+    if ($raw === false || $curlError !== '') {
+        return ['success' => false, 'error' => 'خطا در ارتباط با سامانهٔ پیامک SMS.ir'];
+    }
+
+    $data = json_decode((string)$raw, true);
+    if ($httpStatus >= 200 && $httpStatus < 300 && is_array($data) && (int)($data['status'] ?? 0) === 1) {
+        return ['success' => true, 'messageId' => $data['data']['messageId'] ?? null];
+    }
+
+    $message = is_array($data) && !empty($data['message']) ? (string)$data['message'] : 'خطا در ارسال پیامک';
+    return ['success' => false, 'error' => $message];
 }
 
 function send_otp_email(string $email, string $code): array {

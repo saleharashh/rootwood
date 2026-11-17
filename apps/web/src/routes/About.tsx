@@ -1,20 +1,34 @@
 import { Link } from "wouter";
 import { Award, Compass, HeartHandshake, Leaf, ShieldCheck, Sparkles, Trees } from "lucide-react";
+import { Seo } from "@/components/seo";
+import { absoluteUrl } from "@/lib/seo";
+import { FEATURE_FLAGS } from "@/lib/site-config";
 
 export function About() {
   return (
     <div className="bg-stone-50/50 pb-24">
-      {/* Hero section */}
-      <div className="relative bg-stone-900 text-stone-100 py-20 px-4 sm:px-6 lg:px-8 border-b border-stone-800 overflow-hidden">
-        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#b45309_1px,transparent_1px)] [background-size:16px_16px]" />
+      <Seo
+        title="دربارهٔ آتلیه و کارگاه"
+        description="داستان روت‌وود از سال ۱۳۹۴؛ نجاری سنتی با چوب پایدار، روغن‌های گیاهی و اتصالات اصیل برای ساخت مبلمانی که نسل‌ها می‌ماند."
+        path="/about"
+        image="/images/workshop.webp"
+        jsonLd={{
+          "@context": "https://schema.org",
+          "@type": "AboutPage",
+          name: "دربارهٔ روت‌وود",
+          url: absoluteUrl("/about"),
+        }}
+      />
+      {/* Hero section (60-30-10 Warm Atelier Banner) */}
+      <div className="relative border-b border-[#e8ded3] bg-gradient-to-b from-[#f4ece4] via-[#f7f2eb] to-[#faf8f5] py-16 sm:py-20 px-4 sm:px-6 lg:px-8 overflow-hidden">
         <div className="relative max-w-4xl mx-auto text-center space-y-4">
-          <span className="text-xs font-bold text-amber-400 tracking-widest uppercase">
+          <span className="inline-block text-xs font-bold text-[#b85d19] bg-[#fdf1e7] border border-[#edd1bc] px-3.5 py-1 rounded-full tracking-wide">
             داستان آتلیه و کارگاه روت‌وود
           </span>
-          <h1 className="text-3xl sm:text-5xl font-extrabold font-serif leading-tight">
+          <h1 className="text-3xl sm:text-5xl font-extrabold font-serif text-[#2b1e17] leading-tight">
             دمیدن روح هنر در تپش چوب‌های کهنسال
           </h1>
-          <p className="text-stone-300 text-sm sm:text-base leading-relaxed max-w-2xl mx-auto">
+          <p className="text-[#655347] text-sm sm:text-base leading-relaxed max-w-2xl mx-auto font-light">
             ما در روت‌وود بر این باوریم که هر تکه چوب، راوی داستانی از باران‌ها، آفتاب‌ها و دهه‌ها زندگی است. ما این داستان را به دست‌سازه‌ای ماندگار برای خانه شما پیوند می‌زنیم.
           </p>
         </div>
@@ -117,10 +131,10 @@ export function About() {
               ثبت سفارش اختصاصی و مشاوره
             </Link>
             <Link
-              href="/products"
+              href="/gallery"
               className="bg-[#f2e7dc] hover:bg-[#e8dbce] text-[#2b1e17] text-xs sm:text-sm font-semibold px-6 py-3 rounded-xl border border-[#e8ded3] transition"
             >
-              مشاهده محصولات کارگاه
+              مشاهده گالری آثار اجراشده
             </Link>
           </div>
         </div>

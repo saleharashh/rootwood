@@ -4,6 +4,8 @@ import { ArrowRight, Calendar, Clock, Share2, Tag, User } from "lucide-react";
 import { api, type BlogPost } from "@/lib/api";
 import { formatJalaliDate, toPersianDigits } from "@/lib/price";
 import { useToast } from "@/components/toast-provider";
+import { Seo } from "@/components/seo";
+import { articleJsonLd, breadcrumbJsonLd, trimDescription } from "@/lib/seo";
 
 export function BlogPostView() {
   const [, params] = useRoute("/blog/:slug");
@@ -59,6 +61,12 @@ export function BlogPostView() {
   if (!post) {
     return (
       <div className="max-w-md mx-auto px-4 py-20 text-center space-y-4">
+        <Seo
+          title="مقاله یافت نشد"
+          description="این مقاله حذف یا منتقل شده است."
+          path={`/blog/${slug}`}
+          noindex
+        />
         <h1 className="text-xl font-bold text-stone-900">مقاله مورد نظر یافت نشد</h1>
         <Link
           href="/blog"
@@ -72,6 +80,21 @@ export function BlogPostView() {
 
   return (
     <article className="bg-stone-50/50 pb-24">
+      <Seo
+        title={post.title}
+        description={trimDescription(post.excerpt)}
+        path={`/blog/${post.slug}`}
+        image={post.coverImage}
+        type="article"
+        jsonLd={[
+          articleJsonLd(post, `/blog/${post.slug}`),
+          breadcrumbJsonLd([
+            { name: "خانه", path: "/" },
+            { name: "مجلهٔ چوب", path: "/blog" },
+            { name: post.title, path: `/blog/${post.slug}` },
+          ]),
+        ]}
+      />
       {/* Breadcrumb */}
       <div className="border-b border-stone-200 bg-white">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 py-3.5">

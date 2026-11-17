@@ -12,6 +12,7 @@
     "docker:down": "docker compose down",
     "build": "pnpm --filter web build",
     "build:web": "pnpm --filter web build",
+    "start:web": "npx --yes serve -s apps/web/dist -l $PORT",
     "typecheck": "pnpm --filter web typecheck",
     "preview": "pnpm --filter web preview",
     "dev:api": "pnpm --filter api start:dev",

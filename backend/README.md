@@ -30,6 +30,26 @@ A clean, modern, and hardened **PHP 8+ REST API** backed by **MySQL 8.0 (PDO)** 
 7. **Review Moderation**:
    - Customer reviews are submitted with `approved = 0` and verified-purchase checks. Only published after admin approval.
 
+## Integrations
+
+### Payments (Zarinpal v4)
+- Set `ZARINPAL_MERCHANT_ID` (and `ZARINPAL_SANDBOX=false` in production).
+- The callback URL is derived from `SITE_URL` + `/checkout/callback` and is kept query-free, because Zarinpal appends `?Authority=...&Status=OK` itself. `SITE_URL` must exactly match the public site origin.
+- Amounts are stored in Toman and sent to the gateway in Rial (`× 10`).
+- `Status=NOK` is rejected before any verify call, and orders stay `PENDING` so the customer can retry.
+
+### Temporary Admin Password Login
+- Until the SMS panel is connected, allowlisted admins can log in with their phone + password via `POST /auth/admin-login`.
+- Enable it by setting `ADMIN_PASSWORD` (plain, simplest) or `ADMIN_PASSWORD_HASH` (bcrypt, preferred) in `.env`.
+- Failed attempts are throttled per phone (5 tries / 10 minutes).
+- Set both values empty to disable it and require OTP only.
+
+### OTP SMS (SMS.ir)
+- Create an API key in SMS.ir → Developers, and a verification template in «ارسال سریع».
+- Set `SMS_IR_API_KEY`, `SMS_IR_TEMPLATE_ID`, and `SMS_IR_OTP_PARAMETER` (the template parameter name, e.g. `CODE`).
+- OTPs are sent with `POST https://api.sms.ir/v1/send/verify` and the `x-api-key` header.
+- Without an API key the backend runs in simulated mode (development only) and returns the code in the API response.
+
 ## Requirements
 
 - PHP 8.1+ with extensions: `pdo`, `pdo_mysql`, `curl`, `json`

@@ -22,11 +22,9 @@ import { formatPriceToman, toPersianDigits, formatJalaliDate } from "@/lib/price
 import { useCart } from "@/components/cart-provider";
 import { useAuth } from "@/components/auth-provider";
 import { useToast } from "@/components/toast-provider";
-import { useStoreDialogs } from "@/components/store-dialogs";
 import { ProductCard } from "@/components/product-card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Chip } from "@/components/ui/chip";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
@@ -39,6 +37,8 @@ import {
   CarouselNext,
   type CarouselApi,
 } from "@/components/ui/carousel";
+import { Seo } from "@/components/seo";
+import { breadcrumbJsonLd, productImage, productJsonLd, productTitle, trimDescription } from "@/lib/seo";
 
 export function ProductDetail() {
   const [, params] = useRoute("/products/:slug");
@@ -52,7 +52,6 @@ export function ProductDetail() {
   const [carouselApi, setCarouselApi] = useState<CarouselApi>();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [quantity, setQuantity] = useState(1);
-  const [selectedWood, setSelectedWood] = useState<string>("");
   const [activeTab, setActiveTab] = useState<string>("specs");
 
   // Review form state
@@ -64,7 +63,6 @@ export function ProductDetail() {
   const { addItem, getItemQuantity } = useCart();
   const { user } = useAuth();
   const { showToast } = useToast();
-  const { openAuthDialog } = useStoreDialogs();
 
   useEffect(() => {
     let isMounted = true;
@@ -76,7 +74,6 @@ export function ProductDetail() {
         if (isMounted) {
           setProduct(data.product);
           setRelated(data.related || []);
-          setSelectedWood(data.product.woodType || "گردو سیاه کوهستان");
           setSelectedImage(0);
           setQuantity(1);
 
@@ -133,6 +130,12 @@ export function ProductDetail() {
   if (!product) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-24 text-center space-y-4">
+        <Seo
+          title="دست‌سازه یافت نشد"
+          description="این محصول حذف شده یا موقتاً از کاتالوگ خارج شده است."
+          path={`/products/${slug}`}
+          noindex
+        />
         <h1 className="text-2xl font-bold font-serif text-stone-900">دست‌سازه مورد نظر یافت نشد</h1>
         <p className="text-stone-600 text-sm">ممکن است نام اثر تغییر کرده باشد یا موقتاً از کاتالوگ خارج شده باشد.</p>
         <Link href="/products">
@@ -150,12 +153,16 @@ export function ProductDetail() {
       ? product.images.map((img) => img.url)
       : [product.imageUrl || "/images/workshop.webp"];
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     if (product.stock < quantity) {
       showToast("موجودی این اثر برای تعداد انتخابی کافی نیست", "error");
       return;
     }
-    addItem(product, quantity);
+    try {
+      await addItem(product, quantity);
+    } catch {
+      // The cart provider already surfaced the error.
+    }
   };
 
   const handleShare = async () => {
@@ -206,6 +213,21 @@ export function ProductDetail() {
 
   return (
     <div className="bg-[#fcfbf9] pb-24">
+      <Seo
+        title={productTitle(product)}
+        description={trimDescription(product.tagline || product.shortDescription || product.description)}
+        path={`/products/${product.slug}`}
+        image={productImage(product)}
+        type="product"
+        jsonLd={[
+          productJsonLd(product, `/products/${product.slug}`),
+          breadcrumbJsonLd([
+            { name: "خانه", path: "/" },
+            { name: "کاتالوگ آثار", path: "/products" },
+            { name: productTitle(product), path: `/products/${product.slug}` },
+          ]),
+        ]}
+      />
       {/* Breadcrumb Navigation */}
       <div className="border-b border-stone-200/80 bg-white/70 backdrop-blur-xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5">
@@ -260,12 +282,6 @@ export function ProductDetail() {
 
               {/* Floating Badges */}
               <div className="absolute top-4 right-4 flex flex-col gap-2 items-end pointer-events-none z-10">
-                {product.featured && (
-                  <Badge variant="gold" className="shadow-xs backdrop-blur-xs gap-1.5 py-1 px-3 pointer-events-auto">
-                    <Flame className="w-3.5 h-3.5 text-amber-700 fill-current" />
-                    <span>شاهکار برگزیده کارگاه</span>
-                  </Badge>
-                )}
                 {product.originalPrice && product.originalPrice > product.price && (
                   <Badge variant="destructive" className="shadow-xs font-bold py-1 px-3 pointer-events-auto">
                     تخفیف ویژه کارگاه
@@ -341,24 +357,32 @@ export function ProductDetail() {
               </h1>
 
               {/* Rating & Reviews anchor */}
-              <div className="flex items-center gap-3 text-xs sm:text-sm text-stone-600">
-                <div className="flex items-center gap-1 text-amber-500">
-                  {[...Array(5)].map((_, i) => (
-                    <Star
-                      key={i}
-                      className={`w-4 h-4 ${
-                        i < Math.round(ratingVal) ? "fill-current" : "text-stone-200"
-                      }`}
-                    />
-                  ))}
-                </div>
-                <span className="font-bold text-stone-900">
-                  {toPersianDigits(ratingVal.toFixed(1))}
-                </span>
-                <span className="text-stone-300">•</span>
-                <a href="#reviews" className="text-amber-900 hover:underline font-medium">
-                  {toPersianDigits(product.reviewsCount)} دیدگاه ثبت‌شده
-                </a>
+              <div className="flex items-center gap-3 text-xs text-stone-600 sm:text-sm">
+                {product.reviewsCount > 0 ? (
+                  <>
+                    <div className="flex items-center gap-1 text-amber-500">
+                      {[...Array(5)].map((_, i) => (
+                        <Star
+                          key={i}
+                          className={`h-4 w-4 ${
+                            i < Math.round(ratingVal) ? "fill-current" : "text-stone-200"
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    <span className="font-bold text-stone-900">
+                      {toPersianDigits(ratingVal.toFixed(1))}
+                    </span>
+                    <span className="text-stone-300">•</span>
+                    <a href="#reviews" className="font-medium text-amber-900 hover:underline">
+                      {toPersianDigits(product.reviewsCount)} دیدگاه
+                    </a>
+                  </>
+                ) : (
+                  <a href="#reviews" className="font-medium text-amber-900 hover:underline">
+                    اولین دیدگاه را ثبت کنید
+                  </a>
+                )}
               </div>
 
               {/* Price Block */}
@@ -383,33 +407,12 @@ export function ProductDetail() {
                 {product.shortDescription || product.description?.slice(0, 160)}
               </p>
 
-              {/* Interactive Wood Species Selector */}
-              <div className="space-y-2.5 pt-2">
-                <label className="text-xs font-bold text-stone-800 uppercase tracking-wide block">
-                  گونه چوب طبیعی این اثر:
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  {[
-                    { label: "چوب گردو سیاه کوهستان", color: "#3b2216" },
-                    { label: "چوب بلوط کهنسال جنگلی", color: "#c49a6c" },
-                    { label: "چوب راش طبیعی گرجستان", color: "#d9b38c" },
-                    { label: "چوب چنار خالدار کهن", color: "#b58763" },
-                  ].map((wood) => {
-                    const isSelected = selectedWood === wood.label || selectedWood.includes(wood.label.split(" ")[2]);
-                    return (
-                      <Chip
-                        key={wood.label}
-                        selected={isSelected}
-                        size="sm"
-                        dotColor={wood.color}
-                        onClick={() => setSelectedWood(wood.label)}
-                      >
-                        {wood.label}
-                      </Chip>
-                    );
-                  })}
+              {product.woodType && (
+                <div className="flex items-center justify-between rounded-xl border border-stone-200/90 bg-stone-50 px-3.5 py-2.5 text-xs">
+                  <span className="text-stone-500">گونه چوب</span>
+                  <span className="font-bold text-stone-900">{product.woodType}</span>
                 </div>
-              </div>
+              )}
 
               {/* Stock Status & Quantity Stepper */}
               <div className="pt-4 space-y-4">
@@ -521,7 +524,7 @@ export function ProductDetail() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs sm:text-sm">
                   <div className="p-3.5 rounded-2xl bg-stone-50 border border-stone-100 flex justify-between">
                     <span className="text-stone-500 font-medium">گونه چوب اصلی:</span>
-                    <span className="font-bold text-stone-900">{selectedWood || "چوب گردو کوهستان"}</span>
+                    <span className="font-bold text-stone-900">{product.woodType || "—"}</span>
                   </div>
                   {product.dimensions && (
                     <div className="p-3.5 rounded-2xl bg-stone-50 border border-stone-100 flex justify-between">

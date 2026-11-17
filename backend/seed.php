@@ -37,10 +37,12 @@ function run_seed(): void {
 
     // 1. Users
     $adminId = uuidv4();
+    $secondAdminId = uuidv4();
     $customerId = uuidv4();
 
     $stmt = $pdo->prepare("INSERT INTO users (id, email, password_hash, name, phone, role) VALUES (?, ?, ?, ?, ?, ?)");
-    $stmt->execute([$adminId, 'hello@craftedroot.com', $defaultPasswordHash, 'مدیر کارگاه (آرش)', '09121111111', 'ADMIN']);
+    $stmt->execute([$adminId, '09131534532@craftedroot.local', $defaultPasswordHash, 'مدیر اصلی کارگاه', '09131534532', 'ADMIN']);
+    $stmt->execute([$secondAdminId, '09134398431@craftedroot.local', $defaultPasswordHash, 'مدیر کارگاه', '09134398431', 'ADMIN']);
     $stmt->execute([$customerId, 'arash@craftedroot.com', $defaultPasswordHash, 'آرش صادقی', '09122222222', 'CUSTOMER']);
 
     echo "✓ Users seeded\n";

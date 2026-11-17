@@ -1,10 +1,15 @@
-import { useState } from "react";
-import { Link } from "wouter";
-import { Clock, Mail, MapPin, MessageSquare, Phone, Send, Sparkles } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Clock, Mail, MapPin, Phone, Send, Sparkles } from "lucide-react";
 import { api } from "@/lib/api";
+import { useAuth } from "@/components/auth-provider";
 import { useToast } from "@/components/toast-provider";
+import { SITE_CONTACT } from "@/lib/site-config";
+import { isPlaceholderUserName, isSyntheticEmail, normalizeIranianPhone } from "@/lib/validation";
+import { Seo } from "@/components/seo";
+import { absoluteUrl, localBusinessJsonLd } from "@/lib/seo";
 
 export function Contact() {
+  const { user } = useAuth();
   const { showToast } = useToast();
 
   const [name, setName] = useState("");
@@ -17,10 +22,41 @@ export function Contact() {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
+  useEffect(() => {
+    if (!user) return;
+    if (!name && !isPlaceholderUserName(user.name)) {
+      setName(user.name);
+    }
+    if (!phone && user.phone) {
+      setPhone(user.phone);
+    }
+    if (!email && user.email && !isSyntheticEmail(user.email)) {
+      setEmail(user.email);
+    }
+  }, [user]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !email.trim() || !message.trim()) {
-      showToast("لطفاً نام، ایمیل و متن پیام خود را وارد نمایید", "error");
+
+    const cleanName = name.trim();
+    const validPhone = normalizeIranianPhone(phone);
+    const cleanEmail = email.trim();
+    const cleanMessage = message.trim();
+
+    if (cleanName.length < 2 || isPlaceholderUserName(cleanName)) {
+      showToast("لطفاً نام و نام خانوادگی خود را دقیق وارد نمایید", "error");
+      return;
+    }
+    if (!validPhone) {
+      showToast("لطفاً شماره موبایل معتبر ایرانی (مانند 09123456789) وارد نمایید", "error");
+      return;
+    }
+    if (cleanEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+      showToast("فرمت ایمیل واردشده معتبر نیست", "error");
+      return;
+    }
+    if (cleanMessage.length < 5) {
+      showToast("متن پیام باید حداقل ۵ حرف باشد", "error");
       return;
     }
 
@@ -31,18 +67,15 @@ export function Contact() {
         : subject.trim() || "پیام از فرم تماس با ما";
 
       await api.submitContact({
-        name: name.trim(),
-        email: email.trim(),
-        phone: phone.trim() || undefined,
+        name: cleanName,
+        email: cleanEmail,
+        phone: validPhone,
         subject: fullSubject,
-        message: message.trim(),
+        message: cleanMessage,
       });
 
       setSubmitted(true);
       showToast("پیام شما با موفقیت ثبت شد. به‌زودی با شما تماس خواهیم گرفت.", "success");
-      setName("");
-      setEmail("");
-      setPhone("");
       setSubject("");
       setMessage("");
     } catch (err: unknown) {
@@ -54,16 +87,30 @@ export function Contact() {
 
   return (
     <div className="bg-stone-50/50 pb-24">
-      {/* Header */}
-      <div className="bg-stone-900 text-stone-100 py-16 px-4 sm:px-6 lg:px-8 border-b border-stone-800">
+      <Seo
+        title="تماس، مشاوره و سفارش ساخت اختصاصی"
+        description={`تماس مستقیم با کارگاه روت‌وود در یزد؛ ${SITE_CONTACT.address} — تلفن ${SITE_CONTACT.phone}.`}
+        path="/contact"
+        jsonLd={[
+          {
+            "@context": "https://schema.org",
+            "@type": "ContactPage",
+            name: "تماس با روت‌وود",
+            url: absoluteUrl("/contact"),
+          },
+          localBusinessJsonLd(),
+        ]}
+      />
+      {/* Header (60-30-10 Warm Atelier Banner) */}
+      <div className="border-b border-[#e8ded3] bg-gradient-to-b from-[#f4ece4] via-[#f7f2eb] to-[#faf8f5] py-14 sm:py-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto text-center space-y-4">
-          <span className="text-xs font-bold text-amber-400 tracking-wider uppercase">
+          <span className="inline-block text-xs font-bold text-[#b85d19] bg-[#fdf1e7] border border-[#edd1bc] px-3.5 py-1 rounded-full tracking-wide">
             ارتباط مستقیم با کارگاه و آتلیه
           </span>
-          <h1 className="text-3xl sm:text-4xl font-extrabold font-serif">
+          <h1 className="text-3xl sm:text-4xl font-extrabold font-serif text-[#2b1e17] leading-tight">
             مشاوره، سفارشی‌سازی و سفارش ساخت اختصاصی
           </h1>
-          <p className="text-stone-300 text-sm sm:text-base leading-relaxed max-w-2xl mx-auto">
+          <p className="text-[#655347] text-sm sm:text-base leading-relaxed max-w-2xl mx-auto font-light">
             مشتاقانه آماده شنیدن ایده‌های شما، پاسخ به پرسش‌ها درباره نگهداری چوب یا ساخت اثری منحصر‌به‌فرد برای فضای زندگی و کار شما هستیم.
           </p>
         </div>
@@ -86,7 +133,7 @@ export function Contact() {
                   <div>
                     <h3 className="font-bold text-stone-900">نشانی آتلیه و شوروم:</h3>
                     <p className="text-stone-600 leading-relaxed mt-0.5">
-                      تهران، خیابان ولیعصر، بالاتر از پارک ساعی، بن‌بست نسترن، پلاک ۱۲، استودیو روت‌وود
+                      {SITE_CONTACT.address}
                     </p>
                   </div>
                 </div>
@@ -96,12 +143,16 @@ export function Contact() {
                     <Phone className="w-4 h-4" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-stone-900">تلفن مستقیم کارگاه:</h3>
-                    <p className="text-stone-600 mt-0.5" dir="ltr">
-                      021 - 8877 6655
-                    </p>
-                    <p className="text-stone-600" dir="ltr">
-                      0912 - 345 6789 (پشتیبانی و واتس‌اپ)
+                    <h3 className="font-bold text-stone-900">تلفن مستقیم و ایتا:</h3>
+                    <p className="text-stone-600 mt-0.5">
+                      <a
+                        href={SITE_CONTACT.telHref}
+                        dir="ltr"
+                        className="font-mono font-bold text-stone-800 hover:text-[#b85d19] transition-colors"
+                      >
+                        {SITE_CONTACT.phone}
+                      </a>{" "}
+                      <span className="text-xs text-stone-500">(تماس و پیام‌رسان ایتا)</span>
                     </p>
                   </div>
                 </div>
@@ -113,7 +164,7 @@ export function Contact() {
                   <div>
                     <h3 className="font-bold text-stone-900">پست الکترونیک:</h3>
                     <p className="text-stone-600 mt-0.5" dir="ltr">
-                      hello@craftedroot.com
+                      {SITE_CONTACT.email}
                     </p>
                   </div>
                 </div>
@@ -125,7 +176,7 @@ export function Contact() {
                   <div>
                     <h3 className="font-bold text-stone-900">ساعات حضور و بازدید با هماهنگی:</h3>
                     <p className="text-stone-600 mt-0.5">
-                      شنبه تا پنج‌شنبه: ۹:۰۰ الی ۱۸:۰۰
+                      {SITE_CONTACT.hours}
                     </p>
                   </div>
                 </div>
@@ -156,7 +207,7 @@ export function Contact() {
                 </div>
                 <h3 className="text-lg font-bold text-stone-900 font-serif">پیام شما با موفقیت دریافت شد</h3>
                 <p className="text-xs sm:text-sm text-stone-600 max-w-md mx-auto">
-                  تیم کارگاه روت‌وود پیام شما را بررسی کرده و در کوتاه‌ترین زمان ممکن از طریق تماس یا ایمیل با شما در تماس خواهد بود.
+                  تیم کارگاه روت‌وود پیام شما را بررسی کرده و در کوتاه‌ترین زمان ممکن از طریق شماره تماس ثبت‌شده با شما در تماس خواهد بود.
                 </p>
                 <button
                   type="button"
@@ -243,29 +294,30 @@ export function Contact() {
                   </div>
 
                   <div>
-                    <label className="text-xs font-semibold text-stone-700 block mb-1">پست الکترونیک (ایمیل) *</label>
+                    <label className="text-xs font-semibold text-stone-700 block mb-1">شماره تماس (موبایل) *</label>
                     <input
-                      type="email"
+                      type="tel"
+                      inputMode="numeric"
                       dir="ltr"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
                       required
-                      placeholder="name@example.com"
-                      className="w-full text-xs sm:text-sm px-3.5 py-2.5 rounded-xl border border-stone-200 focus:outline-none focus:border-amber-900 text-left"
+                      placeholder="09123456789"
+                      className="w-full text-xs sm:text-sm px-3.5 py-2.5 rounded-xl border border-stone-200 focus:outline-none focus:border-amber-900 text-left font-mono"
                     />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="text-xs font-semibold text-stone-700 block mb-1">شماره تماس (جهت مشاوره تلفنی)</label>
+                    <label className="text-xs font-semibold text-stone-700 block mb-1">پست الکترونیک (اختیاری)</label>
                     <input
-                      type="tel"
+                      type="email"
                       dir="ltr"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      placeholder="09123456789"
-                      className="w-full text-xs sm:text-sm px-3.5 py-2.5 rounded-xl border border-stone-200 focus:outline-none focus:border-amber-900 text-right"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="name@example.com"
+                      className="w-full text-xs sm:text-sm px-3.5 py-2.5 rounded-xl border border-stone-200 focus:outline-none focus:border-amber-900 text-left"
                     />
                   </div>
 

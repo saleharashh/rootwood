@@ -6,8 +6,27 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/helpers.php';
 require_once __DIR__ . '/jwt.php';
 require_once __DIR__ . '/response.php';
+
+function format_address_row(array $r): array {
+    return [
+        'id' => $r['id'],
+        'fullName' => $r['full_name'],
+        'recipientName' => $r['full_name'],
+        'line1' => $r['line1'],
+        'street' => $r['line1'],
+        'line2' => $r['line2'],
+        'city' => $r['city'],
+        'state' => $r['state'],
+        'province' => $r['state'],
+        'postalCode' => $r['postal_code'],
+        'country' => $r['country'],
+        'phone' => $r['phone'],
+        'isDefault' => (bool)$r['is_default'],
+    ];
+}
 
 function handle_addresses(string $subpath, string $method): void {
     $user = require_auth();
@@ -19,35 +38,37 @@ function handle_addresses(string $subpath, string $method): void {
         $stmt->execute([$user['id']]);
         $rows = $stmt->fetchAll();
 
-        $res = array_map(function ($r) {
-            return [
-                'id' => $r['id'],
-                'fullName' => $r['full_name'],
-                'line1' => $r['line1'],
-                'line2' => $r['line2'],
-                'city' => $r['city'],
-                'state' => $r['state'],
-                'postalCode' => $r['postal_code'],
-                'country' => $r['country'],
-                'phone' => $r['phone'],
-                'isDefault' => (bool)$r['is_default'],
-            ];
-        }, $rows);
-
+        $res = array_map('format_address_row', $rows);
         json_response($res);
     }
 
     // 2. Create Address: POST /
     if (($subpath === '' || $subpath === '/') && $method === 'POST') {
         $body = get_json_input();
-        $fullName = trim($body['fullName'] ?? '');
-        $line1 = trim($body['line1'] ?? '');
-        $city = trim($body['city'] ?? '');
-        $postalCode = trim($body['postalCode'] ?? '');
+        $fullName = trim((string)($body['fullName'] ?? $body['recipientName'] ?? ''));
+        $line1 = trim((string)($body['line1'] ?? $body['street'] ?? ''));
+        $line2 = trim((string)($body['line2'] ?? '')) ?: null;
+        $state = trim((string)($body['state'] ?? $body['province'] ?? ''));
+        $city = trim((string)($body['city'] ?? ''));
+        $postalCode = normalize_postal_code((string)($body['postalCode'] ?? ''));
+        $phoneRaw = (string)($body['phone'] ?? ($user['phone'] ?? ''));
+        $phone = normalize_iranian_phone($phoneRaw);
         $isDefault = !empty($body['isDefault']) ? 1 : 0;
 
-        if (!$fullName || !$line1 || !$city || !$postalCode) {
-            json_error('اطلاعات آدرس ناقص است', 400);
+        if (mb_strlen($fullName) < 2 || is_placeholder_name($fullName)) {
+            json_error('لطفاً نام و نام خانوادگی تحویل‌گیرنده را دقیق وارد نمایید', 400);
+        }
+        if ($phone === null) {
+            json_error('لطفاً شماره موبایل معتبر تحویل‌گیرنده (مانند 09123456789) وارد نمایید', 400);
+        }
+        if (mb_strlen($state) < 2 || mb_strlen($city) < 2) {
+            json_error('استان و شهر باید به طور کامل وارد شوند', 400);
+        }
+        if (mb_strlen($line1) < 10) {
+            json_error('لطفاً نشانی دقیق پستی (خیابان، کوچه، پلاک و واحد) را حداقل در ۱۰ کاراکتر وارد نمایید', 400);
+        }
+        if ($postalCode === null) {
+            json_error('کد پستی باید دقیقاً ۱۰ رقم بدون خط تیره باشد', 400);
         }
 
         if ($isDefault) {
@@ -60,12 +81,24 @@ function handle_addresses(string $subpath, string $method): void {
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'IR', ?, ?)
         ");
         $stmt->execute([
-            $id, $user['id'], $fullName, $line1, trim($body['line2'] ?? '') ?: null,
-            $city, trim($body['state'] ?? '') ?: null, $postalCode,
-            trim($body['phone'] ?? '') ?: $user['phone'], $isDefault
+            $id, $user['id'], $fullName, $line1, $line2,
+            $city, $state, $postalCode, $phone, $isDefault
         ]);
 
-        json_response(['id' => $id, 'success' => true], 201);
+        $address = format_address_row([
+            'id' => $id,
+            'full_name' => $fullName,
+            'line1' => $line1,
+            'line2' => $line2,
+            'city' => $city,
+            'state' => $state,
+            'postal_code' => $postalCode,
+            'country' => 'IR',
+            'phone' => $phone,
+            'is_default' => $isDefault,
+        ]);
+
+        json_response(['id' => $id, 'success' => true, 'address' => $address], 201);
     }
 
     // 3. Delete Address: DELETE /{id}

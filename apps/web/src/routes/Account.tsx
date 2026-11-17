@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
 import {
+  AlertCircle,
   Clock,
-  KeyRound,
   LogOut,
   MapPin,
   Package,
@@ -16,23 +16,21 @@ import { formatPriceToman, toPersianDigits, formatJalaliDate } from "@/lib/price
 import { useAuth } from "@/components/auth-provider";
 import { useToast } from "@/components/toast-provider";
 import { useStoreDialogs } from "@/components/store-dialogs";
-
-const statusMap: Record<string, { label: string; color: string }> = {
-  PENDING: { label: "در انتظار پرداخت", color: "bg-amber-100 text-amber-800 border-amber-200" },
-  PAID: { label: "پرداخت شده (نوبت کارگاه)", color: "bg-emerald-100 text-emerald-800 border-emerald-200" },
-  PROCESSING: { label: "در حال ساخت و فینیش", color: "bg-blue-100 text-blue-800 border-blue-200" },
-  SHIPPED: { label: "تحویل به باربری و ارسال", color: "bg-purple-100 text-purple-800 border-purple-200" },
-  DELIVERED: { label: "تحویل مشتری شد", color: "bg-stone-100 text-stone-800 border-stone-200" },
-  CANCELLED: { label: "لغو شده", color: "bg-red-100 text-red-800 border-red-200" },
-};
+import { StatusBadge } from "@/components/status-badge";
+import {
+  isPlaceholderUserName,
+  isSyntheticEmail,
+  normalizeIranianPhone,
+  normalizePostalCode,
+} from "@/lib/validation";
 
 export function Account() {
   const [, setLocation] = useLocation();
-  const { user, isAuthenticated, loading: authLoading, logout } = useAuth();
+  const { user, isAuthenticated, isProfileComplete, loading: authLoading, logout, updateProfile } = useAuth();
   const { showToast } = useToast();
-  const { openAuthDialog } = useStoreDialogs();
+  const { openAuth } = useStoreDialogs();
 
-  const [activeTab, setActiveTab] = useState<"orders" | "addresses" | "security">("orders");
+  const [activeTab, setActiveTab] = useState<"orders" | "addresses" | "profile">("orders");
   const [orders, setOrders] = useState<Order[]>([]);
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(false);
@@ -42,21 +40,39 @@ export function Account() {
   const [showAddAddress, setShowAddAddress] = useState(false);
   const [newRecipient, setNewRecipient] = useState("");
   const [newPhone, setNewPhone] = useState("");
-  const [newProvince, setNewProvince] = useState("تهران");
-  const [newCity, setNewCity] = useState("تهران");
+  const [newProvince, setNewProvince] = useState("");
+  const [newCity, setNewCity] = useState("");
   const [newStreet, setNewStreet] = useState("");
   const [newPostalCode, setNewPostalCode] = useState("");
 
-  // Change password state
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [changingPass, setChangingPass] = useState(false);
+  // Profile form state
+  const [profileName, setProfileName] = useState("");
+  const [profileEmail, setProfileEmail] = useState("");
+  const [savingProfile, setSavingProfile] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
-      openAuthDialog();
+      openAuth();
     }
   }, [authLoading, isAuthenticated]);
+
+  useEffect(() => {
+    if (user) {
+      setProfileName(isPlaceholderUserName(user.name) ? "" : user.name);
+      setProfileEmail(isSyntheticEmail(user.email) ? "" : user.email);
+      if (!newRecipient && !isPlaceholderUserName(user.name)) {
+        setNewRecipient(user.name);
+      }
+      if (!newPhone && user.phone) {
+        setNewPhone(user.phone);
+      }
+      if (!isPlaceholderUserName(user.name)) {
+        // Keep current tab unless initial incomplete prompt
+      } else {
+        setActiveTab("profile");
+      }
+    }
+  }, [user]);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -91,19 +107,45 @@ export function Account() {
 
   const handleCreateAddress = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newRecipient.trim() || !newPhone.trim() || !newStreet.trim()) {
-      showToast("لطفاً فیلدهای الزامی آدرس را پر کنید", "error");
+    const cleanRecipient = newRecipient.trim();
+    const validPhone = normalizeIranianPhone(newPhone);
+    const cleanProvince = newProvince.trim();
+    const cleanCity = newCity.trim();
+    const cleanStreet = newStreet.trim();
+    const validPostal = normalizePostalCode(newPostalCode);
+
+    if (cleanRecipient.length < 2 || isPlaceholderUserName(cleanRecipient)) {
+      showToast("لطفاً نام و نام خانوادگی تحویل‌گیرنده را دقیق وارد نمایید", "error");
+      return;
+    }
+    if (!validPhone) {
+      showToast("لطفاً شماره موبایل معتبر تحویل‌گیرنده (مانند 09123456789) وارد نمایید", "error");
+      return;
+    }
+    if (cleanProvince.length < 2 || cleanCity.length < 2) {
+      showToast("لطفاً نام استان و شهر را دقیق وارد نمایید", "error");
+      return;
+    }
+    if (!validPostal) {
+      showToast("کد پستی باید دقیقاً ۱۰ رقم بدون خط تیره باشد", "error");
+      return;
+    }
+    if (cleanStreet.length < 10) {
+      showToast("لطفاً نشانی دقیق پستی (خیابان، کوچه، پلاک و واحد) را حداقل در ۱۰ کاراکتر وارد نمایید", "error");
       return;
     }
 
     try {
       await api.createAddress({
-        recipientName: newRecipient.trim(),
-        phone: newPhone.trim(),
-        province: newProvince.trim(),
-        city: newCity.trim(),
-        street: newStreet.trim(),
-        postalCode: newPostalCode.trim() || undefined,
+        recipientName: cleanRecipient,
+        fullName: cleanRecipient,
+        phone: validPhone,
+        province: cleanProvince,
+        state: cleanProvince,
+        city: cleanCity,
+        street: cleanStreet,
+        line1: cleanStreet,
+        postalCode: validPostal,
         isDefault: addresses.length === 0,
       });
       showToast("آدرس جدید با موفقیت ثبت شد", "success");
@@ -127,22 +169,27 @@ export function Account() {
     }
   };
 
-  const handleChangePassword = async (e: React.FormEvent) => {
+  const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (newPassword.length < 6) {
-      showToast("رمز عبور جدید باید حداقل ۶ کاراکتر باشد", "error");
+    const cleanName = profileName.trim();
+    const cleanEmail = profileEmail.trim();
+
+    if (cleanName.length < 2 || isPlaceholderUserName(cleanName)) {
+      showToast("لطفاً نام و نام خانوادگی واقعی خود را وارد نمایید", "error");
       return;
     }
-    setChangingPass(true);
+    if (cleanEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+      showToast("فرمت ایمیل واردشده معتبر نیست", "error");
+      return;
+    }
+
+    setSavingProfile(true);
     try {
-      const res = await api.changePassword(currentPassword, newPassword);
-      showToast(res.message || "رمز عبور با موفقیت به‌روزرسانی شد", "success");
-      setCurrentPassword("");
-      setNewPassword("");
+      await updateProfile(cleanName, cleanEmail);
     } catch (err: unknown) {
-      showToast(err instanceof Error ? err.message : "خطا در تغییر رمز عبور", "error");
+      showToast(err instanceof Error ? err.message : "خطا در ثبت اطلاعات کاربری", "error");
     } finally {
-      setChangingPass(false);
+      setSavingProfile(false);
     }
   };
 
@@ -169,12 +216,12 @@ export function Account() {
     return (
       <div className="max-w-md mx-auto px-4 py-20 text-center space-y-4">
         <h1 className="text-xl font-bold text-[#2b1e17] font-serif">ورود به حساب کاربری</h1>
-        <p className="text-[#655347] text-sm">برای مشاهده سوابق خرید و تنظیمات، لطفاً وارد شوید.</p>
+        <p className="text-[#655347] text-sm">برای مشاهده سوابق خرید و ثبت اطلاعات، لطفاً با شماره موبایل خود وارد شوید.</p>
         <button
-          onClick={() => openAuthDialog()}
+          onClick={openAuth}
           className="bg-[#b85d19] text-white px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-[#9e4e13] transition shadow-sm"
         >
-          ورود با پیامک یا رمز عبور
+          ورود با شماره موبایل
         </button>
       </div>
     );
@@ -192,7 +239,34 @@ export function Account() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 space-y-6">
+        {(!isProfileComplete || addresses.length === 0) && (
+          <div className="bg-[#fdf1e7] border border-[#edd1bc] rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs sm:text-sm text-[#54311c]">
+            <div className="flex items-center gap-2.5">
+              <AlertCircle className="w-5 h-5 text-[#b85d19] shrink-0" />
+              <span>
+                {!isProfileComplete
+                  ? "برای ثبت سفارش و ارسال آثار، لطفاً نام و نام خانوادگی خود را در بخش مشخصات کاربری تکمیل نمایید."
+                  : "هنوز نشانی تحویلی ثبت نکرده‌اید؛ می‌توانید همین حالا آدرس دقیق خود را برای خریدهای سریع‌تر ثبت کنید."}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                if (!isProfileComplete) {
+                  setActiveTab("profile");
+                } else {
+                  setActiveTab("addresses");
+                  setShowAddAddress(true);
+                }
+              }}
+              className="bg-[#b85d19] hover:bg-[#9e4e13] text-white text-xs font-bold px-4 py-2 rounded-xl transition shrink-0 self-start sm:self-auto"
+            >
+              {!isProfileComplete ? "تکمیل مشخصات کاربری" : "ثبت نشانی تحویل"}
+            </button>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* User Sidebar - 4 cols */}
           <div className="lg:col-span-4 space-y-4">
@@ -203,7 +277,9 @@ export function Account() {
                 </div>
                 <div>
                   <h1 className="font-bold text-[#2b1e17] text-base">{user.name}</h1>
-                  <p className="text-xs text-[#8c796e] mt-0.5">{user.phone || user.email}</p>
+                  <p className="text-xs text-[#8c796e] mt-0.5 font-mono" dir="ltr">
+                    {user.phone || (!isSyntheticEmail(user.email) ? user.email : "")}
+                  </p>
                   {user.role === "ADMIN" && (
                     <span className="inline-block mt-1 text-[11px] font-bold bg-[#b85d19] text-white px-2 py-0.5 rounded">
                       مدیر کارگاه
@@ -252,15 +328,15 @@ export function Account() {
 
                 <button
                   type="button"
-                  onClick={() => setActiveTab("security")}
+                  onClick={() => setActiveTab("profile")}
                   className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-medium transition ${
-                    activeTab === "security"
+                    activeTab === "profile"
                       ? "bg-[#b85d19] text-white font-semibold shadow-xs"
                       : "text-[#655347] hover:bg-[#f4ece4]"
                   }`}
                 >
-                  <KeyRound className="w-4 h-4" />
-                  امنیت و رمز عبور
+                  <UserIcon className="w-4 h-4" />
+                  مشخصات کاربری
                 </button>
 
                 <button
@@ -308,10 +384,6 @@ export function Account() {
                 ) : (
                   <div className="space-y-4">
                     {orders.map((order) => {
-                      const st = statusMap[order.status] || {
-                        label: order.status,
-                        color: "bg-stone-100 text-stone-700",
-                      };
                       return (
                         <div
                           key={order.id}
@@ -320,7 +392,7 @@ export function Account() {
                           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-stone-100 pb-3">
                             <div className="space-y-0.5">
                               <span className="text-xs text-stone-500">
-                                شناسه: <strong className="font-mono text-stone-900">{order.id.slice(0, 10)}</strong>
+                                شناسه: <strong className="font-mono text-stone-900">{order.orderNumber || order.id.slice(0, 10)}</strong>
                               </span>
                               <div className="text-xs text-stone-500 flex items-center gap-1">
                                 <Clock className="w-3.5 h-3.5" />
@@ -329,11 +401,7 @@ export function Account() {
                             </div>
 
                             <div className="flex items-center gap-3">
-                              <span
-                                className={`text-xs font-bold px-3 py-1 rounded-full border ${st.color}`}
-                              >
-                                {st.label}
-                              </span>
+                              <StatusBadge status={order.status} />
                             </div>
                           </div>
 
@@ -418,7 +486,7 @@ export function Account() {
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
-                        <label className="text-xs font-semibold text-[#655347] block mb-1">نام تحویل‌گیرنده *</label>
+                        <label className="text-xs font-semibold text-[#655347] block mb-1">نام و نام خانوادگی تحویل‌گیرنده *</label>
                         <input
                           type="text"
                           value={newRecipient}
@@ -429,15 +497,16 @@ export function Account() {
                         />
                       </div>
                       <div>
-                        <label className="text-xs font-semibold text-[#655347] block mb-1">شماره تماس *</label>
+                        <label className="text-xs font-semibold text-[#655347] block mb-1">شماره موبایل تماس *</label>
                         <input
                           type="tel"
+                          inputMode="numeric"
                           dir="ltr"
                           value={newPhone}
                           onChange={(e) => setNewPhone(e.target.value)}
                           required
                           placeholder="09123456789"
-                          className="w-full text-xs sm:text-sm px-3.5 py-2.5 rounded-xl border border-[#e8ded3] focus:outline-none focus:ring-2 focus:ring-[#b85d19]/20 focus:border-[#b85d19] text-right"
+                          className="w-full text-xs sm:text-sm px-3.5 py-2.5 rounded-xl border border-[#e8ded3] focus:outline-none focus:ring-2 focus:ring-[#b85d19]/20 focus:border-[#b85d19] text-left font-mono"
                         />
                       </div>
                     </div>
@@ -450,6 +519,7 @@ export function Account() {
                           value={newProvince}
                           onChange={(e) => setNewProvince(e.target.value)}
                           required
+                          placeholder="مثال: یزد"
                           className="w-full text-xs sm:text-sm px-3.5 py-2.5 rounded-xl border border-[#e8ded3] focus:outline-none focus:ring-2 focus:ring-[#b85d19]/20 focus:border-[#b85d19]"
                         />
                       </div>
@@ -460,29 +530,34 @@ export function Account() {
                           value={newCity}
                           onChange={(e) => setNewCity(e.target.value)}
                           required
+                          placeholder="مثال: یزد"
                           className="w-full text-xs sm:text-sm px-3.5 py-2.5 rounded-xl border border-[#e8ded3] focus:outline-none focus:ring-2 focus:ring-[#b85d19]/20 focus:border-[#b85d19]"
                         />
                       </div>
                       <div>
-                        <label className="text-xs font-semibold text-[#655347] block mb-1">کد پستی</label>
+                        <label className="text-xs font-semibold text-[#655347] block mb-1">کد پستی ۱۰ رقمی *</label>
                         <input
                           type="text"
+                          inputMode="numeric"
                           dir="ltr"
+                          maxLength={10}
                           value={newPostalCode}
                           onChange={(e) => setNewPostalCode(e.target.value)}
+                          required
                           placeholder="1234567890"
-                          className="w-full text-xs sm:text-sm px-3.5 py-2.5 rounded-xl border border-[#e8ded3] focus:outline-none focus:ring-2 focus:ring-[#b85d19]/20 focus:border-[#b85d19] text-right"
+                          className="w-full text-xs sm:text-sm px-3.5 py-2.5 rounded-xl border border-[#e8ded3] focus:outline-none focus:ring-2 focus:ring-[#b85d19]/20 focus:border-[#b85d19] text-left font-mono"
                         />
                       </div>
                     </div>
 
                     <div>
-                      <label className="text-xs font-semibold text-[#655347] block mb-1">نشانی دقیق پستی *</label>
+                      <label className="text-xs font-semibold text-[#655347] block mb-1">نشانی دقیق پستی (خیابان، کوچه، پلاک، واحد) *</label>
                       <textarea
                         rows={2}
                         value={newStreet}
                         onChange={(e) => setNewStreet(e.target.value)}
                         required
+                        placeholder="خیابان، کوچه، پلاک، طبقه و واحد..."
                         className="w-full text-xs sm:text-sm px-3.5 py-2.5 rounded-xl border border-[#e8ded3] focus:outline-none focus:ring-2 focus:ring-[#b85d19]/20 focus:border-[#b85d19]"
                       />
                     </div>
@@ -530,7 +605,7 @@ export function Account() {
                               </span>
                             )}
                           </div>
-                          <div className="text-xs text-stone-500">{addr.phone}</div>
+                          <div className="text-xs text-stone-500 font-mono" dir="ltr">{addr.phone}</div>
                           <p className="text-xs text-stone-700 leading-relaxed pt-1">
                             {addr.province}، {addr.city}، {addr.street}
                           </p>
@@ -558,50 +633,64 @@ export function Account() {
               </div>
             )}
 
-            {/* Security Tab */}
-            {activeTab === "security" && (
+            {/* Profile Tab (Replaces Password/Security Tab) */}
+            {activeTab === "profile" && (
               <div className="bg-white p-6 rounded-2xl border border-stone-200 shadow-sm space-y-6">
                 <div className="border-b border-stone-100 pb-3">
-                  <h2 className="text-lg font-bold text-stone-900 font-serif">تغییر رمز عبور</h2>
+                  <h2 className="text-lg font-bold text-[#2b1e17] font-serif">مشخصات کاربری و تکمیل اطلاعات</h2>
                   <p className="text-xs text-stone-500 mt-0.5">
-                    برای امنیت حساب خود، از رمز عبور با ترکیبی از حروف و اعداد استفاده فرمایید.
+                    شماره موبایل شما تایید شده است؛ برای تسریع در ارسال سفارش‌ها نام و مشخصات خود را ثبت یا ویرایش کنید.
                   </p>
                 </div>
 
-                <form onSubmit={handleChangePassword} className="space-y-4 max-w-md">
+                <form onSubmit={handleSaveProfile} className="space-y-4 max-w-md">
                   <div>
-                    <label className="text-xs font-semibold text-stone-700 block mb-1">
-                      رمز عبور فعلی (در صورت داشتن رمز قبلی)
+                    <label className="text-xs font-semibold text-[#655347] block mb-1">
+                      شماره موبایل تاییدشده (شناسه ورود)
                     </label>
                     <input
-                      type="password"
-                      value={currentPassword}
-                      onChange={(e) => setCurrentPassword(e.target.value)}
-                      placeholder="••••••••"
+                      type="text"
+                      value={user.phone || ""}
+                      disabled
+                      dir="ltr"
+                      className="w-full text-sm px-3.5 py-2.5 rounded-xl border border-[#e8ded3] bg-[#f4ece4]/60 text-[#655347] font-mono text-left cursor-not-allowed"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-semibold text-[#655347] block mb-1">
+                      نام و نام خانوادگی *
+                    </label>
+                    <input
+                      type="text"
+                      value={profileName}
+                      onChange={(e) => setProfileName(e.target.value)}
+                      required
+                      placeholder="مثال: سهراب سپهری"
                       className="w-full text-sm px-3.5 py-2.5 rounded-xl border border-[#e8ded3] focus:outline-none focus:ring-2 focus:ring-[#b85d19]/20 focus:border-[#b85d19]"
                     />
                   </div>
 
                   <div>
                     <label className="text-xs font-semibold text-[#655347] block mb-1">
-                      رمز عبور جدید * (حداقل ۶ کاراکتر)
+                      ایمیل (اختیاری)
                     </label>
                     <input
-                      type="password"
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      required
-                      placeholder="••••••••"
-                      className="w-full text-sm px-3.5 py-2.5 rounded-xl border border-[#e8ded3] focus:outline-none focus:ring-2 focus:ring-[#b85d19]/20 focus:border-[#b85d19]"
+                      type="email"
+                      value={profileEmail}
+                      onChange={(e) => setProfileEmail(e.target.value)}
+                      placeholder="name@example.com"
+                      dir="ltr"
+                      className="w-full text-sm px-3.5 py-2.5 rounded-xl border border-[#e8ded3] focus:outline-none focus:ring-2 focus:ring-[#b85d19]/20 focus:border-[#b85d19] text-left"
                     />
                   </div>
 
                   <button
                     type="submit"
-                    disabled={changingPass}
+                    disabled={savingProfile}
                     className="bg-[#b85d19] text-white text-xs font-semibold px-6 py-2.5 rounded-xl hover:bg-[#9e4e13] transition disabled:opacity-50 shadow-xs"
                   >
-                    {changingPass ? "در حال به‌روزرسانی..." : "به‌روزرسانی رمز عبور"}
+                    {savingProfile ? "در حال ذخیره..." : "ذخیره مشخصات کاربری"}
                   </button>
                 </form>
               </div>

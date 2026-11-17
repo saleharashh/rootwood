@@ -1,759 +1,643 @@
-import React, { useEffect, useState, useCallback, useMemo } from "react";
-import { Link, useLocation } from "wouter";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  Search,
-  SlidersHorizontal,
-  X,
   ArrowLeft,
   ArrowRight,
+  Check,
   Flame,
-  Sparkles,
   RotateCcw,
+  Search,
+  SlidersHorizontal,
   Tag,
   Trees,
-  Check,
-  Grid3X3,
-  Layers,
+  X,
 } from "lucide-react";
 import { api, type Category, type Product, type CatalogFacets } from "@/lib/api";
 import { ProductCard } from "@/components/product-card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Chip } from "@/components/ui/chip";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select } from "@/components/ui/select";
-import { Sheet, SheetHeader, SheetTitle, SheetContent, SheetFooter } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
-import { formatPriceToman, toPersianDigits } from "@/lib/price";
+import { EmptyState } from "@/components/empty-state";
+import { toPersianDigits } from "@/lib/price";
+import { Seo } from "@/components/seo";
+
+const PAGE_SIZE = 12;
 
 const WOOD_SWATCHES: Record<string, string> = {
-  "گردو": "#3b2216",
+  گردو: "#3b2216",
   "گردوی سیاه": "#3b2216",
   "گردوی تیره": "#321d13",
-  "بلوط": "#c49a6c",
+  بلوط: "#c49a6c",
   "بلوط جنگلی": "#b88a59",
   "بلوط ایرانی": "#a67c52",
-  "راش": "#d9b38c",
+  راش: "#d9b38c",
   "راش گرجستان": "#cf9e70",
-  "چنار": "#b58763",
-  "گیلاس": "#8c4331",
+  چنار: "#b58763",
+  گیلاس: "#8c4331",
   "گیلاس آمریکایی": "#8c4331",
-  "توت": "#9e6938",
+  توت: "#9e6938",
   "توت ایرانی": "#9e6938",
 };
 
+const PRICE_RANGES = [
+  { id: "all", label: "تمام قیمت‌ها" },
+  { id: "under-5m", label: "کمتر از ۵ میلیون تومان" },
+  { id: "5m-15m", label: "۵ تا ۱۵ میلیون تومان" },
+  { id: "above-15m", label: "بیش از ۱۵ میلیون تومان" },
+];
+
+interface Filters {
+  search: string;
+  category: string;
+  woodType: string;
+  featured: boolean;
+  priceRange: string;
+  sort: string;
+}
+
+const DEFAULT_FILTERS: Filters = {
+  search: "",
+  category: "",
+  woodType: "",
+  featured: false,
+  priceRange: "all",
+  sort: "newest",
+};
+
+function readFilters(): Filters {
+  const params = new URLSearchParams(window.location.search);
+  return {
+    search: params.get("search") || "",
+    category: params.get("category") || "",
+    woodType: params.get("woodType") || "",
+    featured: params.get("featured") === "true",
+    priceRange: params.get("priceRange") || "all",
+    sort: params.get("sort") || "newest",
+  };
+}
+
+function readPage(): number {
+  const params = new URLSearchParams(window.location.search);
+  return Math.max(1, parseInt(params.get("page") || "1", 10) || 1);
+}
+
+function getSwatchColor(wood: string) {
+  for (const [key, color] of Object.entries(WOOD_SWATCHES)) {
+    if (wood.includes(key)) return color;
+  }
+  return "#8c6239";
+}
+
+function buildQuery(filters: Filters, page: number) {
+  const query = new URLSearchParams();
+  if (filters.search) query.set("search", filters.search);
+  if (filters.category) query.set("category", filters.category);
+  if (filters.woodType) query.set("woodType", filters.woodType);
+  if (filters.featured) query.set("featured", "true");
+  if (filters.priceRange !== "all") query.set("priceRange", filters.priceRange);
+  if (filters.sort !== "newest") query.set("sort", filters.sort);
+  if (page > 1) query.set("page", String(page));
+  return query.toString();
+}
+
+function buildParams(filters: Filters, page: number) {
+  const params: Record<string, string | number> = {
+    limit: PAGE_SIZE,
+    offset: (page - 1) * PAGE_SIZE,
+  };
+
+  if (filters.search) params.search = filters.search;
+  if (filters.category) params.category = filters.category;
+  if (filters.woodType) params.woodType = filters.woodType;
+  if (filters.featured) params.featured = "true";
+  if (filters.sort) params.sort = filters.sort;
+
+  if (filters.priceRange === "under-5m") {
+    params.maxPrice = 5_000_000;
+  } else if (filters.priceRange === "5m-15m") {
+    params.minPrice = 5_000_000;
+    params.maxPrice = 15_000_000;
+  } else if (filters.priceRange === "above-15m") {
+    params.minPrice = 15_000_000;
+  }
+
+  return params;
+}
+
+function pageWindow(current: number, total: number) {
+  const size = Math.min(7, total);
+  let start = Math.max(1, current - Math.floor(size / 2));
+  const end = Math.min(total, start + size - 1);
+  start = Math.max(1, end - size + 1);
+  return Array.from({ length: end - start + 1 }, (_, index) => start + index);
+}
+
 export function Products() {
-  const [, setLocation] = useLocation();
   const [products, setProducts] = useState<Product[]>([]);
   const [total, setTotal] = useState(0);
   const [categories, setCategories] = useState<Category[]>([]);
   const [facets, setFacets] = useState<CatalogFacets>({ woodTypes: [], priceMin: 0, priceMax: 0 });
   const [loading, setLoading] = useState(true);
 
-  // Filter state
-  const [search, setSearch] = useState("");
-  const [category, setCategory] = useState<string>("");
-  const [woodType, setWoodType] = useState<string>("");
-  const [featured, setFeatured] = useState<boolean | null>(null);
-  const [priceRange, setPriceRange] = useState<string>("all");
-  const [sort, setSort] = useState("newest");
-  const [page, setPage] = useState(1);
+  const [searchInput, setSearchInput] = useState(() => readFilters().search);
+  const [filters, setFilters] = useState<Filters>(() => readFilters());
+  const [page, setPage] = useState(() => readPage());
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
-  const pageSize = 12;
 
-  // Sync state from URL parameters
-  const syncFromUrl = useCallback(() => {
-    const params = new URLSearchParams(window.location.search);
-    const q = params.get("search") || "";
-    const cat = params.get("category") || "";
-    const wood = params.get("woodType") || "";
-    const feat = params.get("featured");
-    const s = params.get("sort") || "newest";
-    const p = params.get("page") || "1";
-    const pr = params.get("priceRange") || "all";
+  const firstRender = useRef(true);
 
-    setSearch(q);
-    setCategory(cat);
-    setWoodType(wood);
-    setFeatured(feat === "true" ? true : null);
-    setSort(s);
-    setPriceRange(pr);
-    setPage(Math.max(1, parseInt(p, 10) || 1));
-  }, []);
-
-  useEffect(() => {
-    syncFromUrl();
-  }, [syncFromUrl]);
-
-  // Load categories and facets
   useEffect(() => {
     Promise.all([
       api.getCategories().catch(() => ({ categories: [] })),
       api.getFacets().catch(() => ({ woodTypes: [], priceMin: 0, priceMax: 0 })),
-    ]).then(([catRes, f]) => {
-      setCategories(catRes.categories || []);
-      setFacets(f || { woodTypes: [], priceMin: 0, priceMax: 0 });
+    ]).then(([categoryResponse, facetResponse]) => {
+      setCategories(categoryResponse.categories || []);
+      setFacets(facetResponse || { woodTypes: [], priceMin: 0, priceMax: 0 });
     });
   }, []);
 
-  // Fetch products
-  const fetchProducts = useCallback(async () => {
-    setLoading(true);
-    try {
-      const q = new URLSearchParams();
-      if (search.trim()) q.set("search", search.trim());
-      if (category) q.set("category", category);
-      if (woodType) q.set("woodType", woodType);
-      if (featured !== null) q.set("featured", String(featured));
-      if (sort) q.set("sort", sort);
-      if (priceRange !== "all") q.set("priceRange", priceRange);
+  // Debounce the search box before it becomes a real filter.
+  useEffect(() => {
+    const trimmed = searchInput.trim();
+    if (trimmed === filters.search) return;
 
-      if (priceRange === "under-5m") {
-        q.set("maxPrice", "5000000");
-      } else if (priceRange === "5m-15m") {
-        q.set("minPrice", "5000000");
-        q.set("maxPrice", "15000000");
-      } else if (priceRange === "above-15m") {
-        q.set("minPrice", "15000000");
-      }
+    const timer = setTimeout(() => {
+      setFilters((current) => ({ ...current, search: trimmed }));
+      setPage(1);
+    }, 350);
 
-      q.set("limit", String(pageSize));
-      q.set("offset", String((page - 1) * pageSize));
+    return () => clearTimeout(timer);
+  }, [searchInput, filters.search]);
 
-      const qs = q.toString();
-      window.history.replaceState(null, "", `/products${qs ? `?${qs}` : ""}`);
-
-      const res = await api.getProducts(Object.fromEntries(q.entries()));
-      setProducts(res.items || []);
-      setTotal(res.total || 0);
-    } catch {
-      setProducts([]);
-      setTotal(0);
-    } finally {
-      setLoading(false);
+  // Keep the address bar in sync without pushing history entries.
+  useEffect(() => {
+    const query = buildQuery(filters, page);
+    const nextUrl = `/products${query ? `?${query}` : ""}`;
+    if (`${window.location.pathname}${window.location.search}` !== nextUrl) {
+      window.history.replaceState(null, "", nextUrl);
     }
-  }, [search, category, woodType, featured, priceRange, sort, page]);
+  }, [filters, page]);
 
   useEffect(() => {
-    fetchProducts();
-  }, [fetchProducts]);
+    const syncFromUrl = () => {
+      const nextFilters = readFilters();
+      setFilters(nextFilters);
+      setSearchInput(nextFilters.search);
+      setPage(readPage());
+    };
+    window.addEventListener("popstate", syncFromUrl);
+    return () => window.removeEventListener("popstate", syncFromUrl);
+  }, []);
 
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  useEffect(() => {
+    const controller = new AbortController();
+
+    const load = async () => {
+      setLoading(true);
+      try {
+        const response = await api.getProducts(buildParams(filters, page), {
+          signal: controller.signal,
+        });
+        if (controller.signal.aborted) return;
+
+        setProducts(response.items || []);
+        setTotal(response.total || 0);
+
+        const lastPage = Math.max(1, Math.ceil((response.total || 0) / PAGE_SIZE));
+        if (page > lastPage) setPage(lastPage);
+      } catch {
+        if (!controller.signal.aborted) {
+          setProducts([]);
+          setTotal(0);
+        }
+      } finally {
+        if (!controller.signal.aborted) setLoading(false);
+      }
+    };
+
+    load();
+    return () => controller.abort();
+  }, [filters, page]);
+
+  useEffect(() => {
+    if (firstRender.current) {
+      firstRender.current = false;
+      return;
+    }
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [page]);
+
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+
+  const updateFilter = useCallback(<K extends keyof Filters>(key: K, value: Filters[K]) => {
+    setFilters((current) => ({ ...current, [key]: value }));
+    setPage(1);
+  }, []);
 
   const clearAllFilters = () => {
-    setSearch("");
-    setCategory("");
-    setWoodType("");
-    setFeatured(null);
-    setPriceRange("all");
-    setSort("newest");
+    setFilters(DEFAULT_FILTERS);
+    setSearchInput("");
     setPage(1);
   };
 
   const activeFiltersCount = useMemo(() => {
     let count = 0;
-    if (search.trim()) count++;
-    if (category) count++;
-    if (woodType) count++;
-    if (featured !== null) count++;
-    if (priceRange !== "all") count++;
+    if (filters.search) count++;
+    if (filters.category) count++;
+    if (filters.woodType) count++;
+    if (filters.featured) count++;
+    if (filters.priceRange !== "all") count++;
     return count;
-  }, [search, category, woodType, featured, priceRange]);
+  }, [filters]);
 
-  const selectedCategoryName = useMemo(() => {
-    return categories.find((c) => c.slug === category)?.name || "";
-  }, [categories, category]);
+  const selectedCategoryName =
+    categories.find((category) => category.slug === filters.category)?.name || "";
 
-  // Swatch color helper
-  const getSwatchColor = (wood: string) => {
-    for (const [key, color] of Object.entries(WOOD_SWATCHES)) {
-      if (wood.includes(key)) return color;
-    }
-    return "#8c6239";
-  };
+  const priceRangeLabel =
+    PRICE_RANGES.find((range) => range.id === filters.priceRange)?.label || "";
 
-  return (
-    <div className="bg-[#fcfbf9] min-h-[85vh] pb-24">
-      {/* Editorial Atelier Banner */}
-      <div className="border-b border-stone-200/80 bg-gradient-to-b from-stone-100/70 to-[#fcfbf9]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
-          <div className="max-w-3xl space-y-3">
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="wood" className="text-xs px-3 py-1">
-                آتلیه نجاری سنتی روت‌وود
-              </Badge>
-              {featured && (
-                <Badge variant="gold" className="text-xs px-3 py-1">
-                  <Flame className="w-3.5 h-3.5 fill-current" />
-                  شاهکارهای پرفروش
-                </Badge>
+  const isEmpty = !loading && products.length === 0;
+
+  const filterControls = (
+    <>
+      <div className="space-y-3">
+        <label className="block text-xs font-bold text-[var(--color-ink)]">دسته‌بندی</label>
+        <div className="space-y-2.5">
+          <Checkbox
+            checked={filters.category === ""}
+            onCheckedChange={() => updateFilter("category", "")}
+            label="همهٔ دسته‌بندی‌ها"
+          />
+          {categories.map((category) => (
+            <div key={category.id} className="flex items-center justify-between">
+              <Checkbox
+                checked={filters.category === category.slug}
+                onCheckedChange={() =>
+                  updateFilter(
+                    "category",
+                    filters.category === category.slug ? "" : category.slug
+                  )
+                }
+                label={category.name}
+              />
+              {category.productCount !== undefined && (
+                <span className="font-mono text-[11px] text-[var(--color-ink-muted)]">
+                  {toPersianDigits(category.productCount)}
+                </span>
               )}
             </div>
-
-            <h1 className="text-2xl sm:text-4xl font-extrabold font-serif text-stone-900 tracking-tight leading-tight">
-              {featured
-                ? "پرفروش‌ترین دست‌سازه‌های چوبی کارگاه"
-                : category
-                ? `مجموعه ${selectedCategoryName}`
-                : "کاتالوگ جامع دست‌سازه‌های چوب طبیعی"}
-            </h1>
-
-            <p className="text-xs sm:text-sm text-stone-600 leading-relaxed max-w-2xl font-light">
-              خلق آثاری ماندگار از گونه‌های کهنسال بلوط، گردو، گیلاس و توت ایرانی با اتصالات اصیل نجاری و فینیش روغن‌های گیاهی ارگانیک بدون سم.
-            </p>
-          </div>
+          ))}
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 space-y-8">
-        {/* Top Control Bar: Search + Quick Sort Tabs + Mobile Filter Trigger */}
-        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 p-4 rounded-2xl bg-white border border-stone-200/80 shadow-2xs">
-          {/* Search Input */}
-          <div className="relative flex-1 max-w-md">
+      <Separator />
+
+      <div className="space-y-3">
+        <label className="block text-xs font-bold text-[var(--color-ink)]">گونهٔ چوب</label>
+        <div className="flex flex-wrap gap-2">
+          {facets.woodTypes.map((wood) => {
+            const selected = filters.woodType === wood;
+            return (
+              <Chip
+                key={wood}
+                selected={selected}
+                size="sm"
+                dotColor={getSwatchColor(wood)}
+                onClick={() => updateFilter("woodType", selected ? "" : wood)}
+              >
+                {wood}
+              </Chip>
+            );
+          })}
+        </div>
+      </div>
+
+      <Separator />
+
+      <div className="space-y-3">
+        <label className="block text-xs font-bold text-[var(--color-ink)]">بودجه</label>
+        <div className="flex flex-col gap-1.5">
+          {PRICE_RANGES.map((range) => (
+            <button
+              key={range.id}
+              type="button"
+              onClick={() => updateFilter("priceRange", range.id)}
+              className={`flex items-center justify-between rounded-xl px-3 py-2 text-right text-xs font-medium transition-colors ${
+                filters.priceRange === range.id
+                  ? "bg-[var(--color-accent)] text-white"
+                  : "text-[var(--color-ink-soft)] hover:bg-[var(--color-accent-soft)]"
+              }`}
+            >
+              <span>{range.label}</span>
+              {filters.priceRange === range.id && <Check className="h-3.5 w-3.5" />}
+            </button>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+
+  return (
+    <div className="min-h-[85vh] pb-20">
+      <Seo
+        title={
+          filters.featured
+            ? "پرفروش‌ترین دست‌سازه‌های چوبی"
+            : filters.category
+              ? `مجموعهٔ ${selectedCategoryName}`
+              : filters.search
+                ? `جستجو برای ${filters.search}`
+                : "کاتالوگ دست‌سازه‌های چوب طبیعی"
+        }
+        description={
+          selectedCategoryName
+            ? `خرید ${selectedCategoryName} دست‌ساز از چوب طبیعی؛ قیمت، ابعاد و شناسنامهٔ اصالت در کاتالوگ روت‌وود.`
+            : "کاتالوگ کامل میز، نشیمن، کتابخانه و دکور چوب طبیعی؛ ساخته‌شده در آتلیه روت‌وود با ارسال به سراسر ایران."
+        }
+        path="/products"
+        noindex={Boolean(
+          filters.search ||
+            filters.category ||
+            filters.woodType ||
+            filters.featured ||
+            filters.priceRange !== "all" ||
+            page > 1
+        )}
+      />
+      <div className="border-b border-[var(--color-border)] bg-gradient-to-b from-[var(--color-surface-2)]/60 to-transparent">
+        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
+          <h1 className="max-w-3xl font-serif text-2xl font-extrabold leading-tight text-[var(--color-ink)] sm:text-3xl">
+            {filters.featured
+              ? "پرفروش‌ترین دست‌سازه‌های چوبی"
+              : filters.category
+                ? `مجموعهٔ ${selectedCategoryName}`
+                : "کاتالوگ دست‌سازه‌های چوب طبیعی"}
+          </h1>
+          <p className="mt-2 max-w-2xl text-xs leading-relaxed text-[var(--color-ink-soft)] sm:text-sm">
+            آثار ساخته‌شده از گردو، بلوط، راش و چنار با اتصالات اصیل نجاری و فینیش روغن گیاهی.
+          </p>
+        </div>
+      </div>
+
+      <div className="mx-auto max-w-7xl space-y-6 px-4 pt-6 sm:px-6 lg:px-8">
+        <div className="flex flex-col gap-3 rounded-2xl border border-[var(--color-border)] bg-white p-3.5 sm:flex-row sm:items-center">
+          <div className="relative max-w-md flex-1">
             <Input
               type="text"
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setPage(1);
-              }}
-              placeholder="جستجو بر اساس نام دست‌سازه، گونه چوب..."
-              className="pr-10 pl-8 bg-stone-50/60"
+              value={searchInput}
+              onChange={(event) => setSearchInput(event.target.value)}
+              placeholder="جستجوی نام اثر یا گونهٔ چوب..."
+              className="bg-[var(--color-canvas)] pr-10 pl-8"
             />
-            <Search className="w-4 h-4 text-stone-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-            {search && (
+            <Search className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-ink-muted)]" />
+            {searchInput && (
               <button
                 type="button"
-                onClick={() => setSearch("")}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-700 p-0.5"
+                onClick={() => {
+                  setSearchInput("");
+                  updateFilter("search", "");
+                }}
+                className="absolute left-3 top-1/2 -translate-y-1/2 p-0.5 text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]"
+                aria-label="پاک کردن جستجو"
               >
-                <X className="w-3.5 h-3.5" />
+                <X className="h-3.5 w-3.5" />
               </button>
             )}
           </div>
 
-          <div className="flex items-center gap-3 justify-between md:justify-end">
-            {/* Mobile Filter Button */}
+          <div className="flex flex-wrap items-center gap-2.5">
+            <Button
+              type="button"
+              variant={filters.featured ? "default" : "outline"}
+              size="sm"
+              onClick={() => updateFilter("featured", !filters.featured)}
+              className="gap-1.5"
+            >
+              <Flame className="h-3.5 w-3.5" />
+              پرفروش‌ها
+            </Button>
+
             <Button
               type="button"
               variant="outline"
               size="sm"
               onClick={() => setMobileFilterOpen(true)}
-              className="lg:hidden gap-2 border-stone-200/90 text-stone-700"
+              className="gap-2 lg:hidden"
             >
-              <SlidersHorizontal className="w-4 h-4 text-[#b85d19]" />
-              <span>فیلترها</span>
+              <SlidersHorizontal className="h-4 w-4 text-[var(--color-accent)]" />
+              فیلترها
               {activeFiltersCount > 0 && (
-                <span className="bg-[#b85d19] text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold">
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--color-accent)] text-[10px] font-bold text-white">
                   {toPersianDigits(activeFiltersCount)}
                 </span>
               )}
             </Button>
 
-            {/* Sort Selector */}
-            <div className="flex items-center gap-2 text-xs font-semibold text-stone-600">
-              <span className="hidden sm:inline shrink-0">مرتب‌سازی:</span>
-              <Select
-                value={sort}
-                onChange={(e) => {
-                  setSort(e.target.value);
-                  setPage(1);
-                }}
-                className="h-9 w-44 text-xs font-semibold bg-stone-50/60"
-              >
-                <option value="newest">جدیدترین دست‌سازه‌ها</option>
-                <option value="price-asc">ارزان‌ترین قیمت</option>
-                <option value="price-desc">گران‌ترین قیمت</option>
-                <option value="name">بر اساس نام اثر</option>
-              </Select>
-            </div>
+            <Select
+              value={filters.sort}
+              onChange={(event) => updateFilter("sort", event.target.value)}
+              className="h-9 w-44 bg-[var(--color-canvas)] text-xs font-semibold"
+            >
+              <option value="newest">جدیدترین</option>
+              <option value="price-asc">ارزان‌ترین</option>
+              <option value="price-desc">گران‌ترین</option>
+              <option value="name">بر اساس نام</option>
+            </Select>
           </div>
         </div>
 
-        {/* Active Filter Pills Bar (Chips) */}
         {activeFiltersCount > 0 && (
-          <div className="flex flex-wrap items-center gap-2 p-3 bg-[#fdf1e7] rounded-2xl border border-[#edd1bc] text-xs animate-in fade-in duration-200">
-            <span className="font-semibold text-[#b85d19] flex items-center gap-1.5 shrink-0">
-              <Tag className="w-3.5 h-3.5 text-[#b85d19]" />
-              فیلترهای اعمال‌شده:
+          <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-[var(--color-accent-border)] bg-[var(--color-accent-soft)] p-3 text-xs">
+            <span className="flex shrink-0 items-center gap-1.5 font-semibold text-[var(--color-accent)]">
+              <Tag className="h-3.5 w-3.5" />
+              فیلترهای فعال
             </span>
 
-            {category && (
-              <Chip
-                selected
-                size="sm"
-                onRemove={() => {
-                  setCategory("");
-                  setPage(1);
-                }}
-              >
-                دسته: {selectedCategoryName}
+            {filters.category && (
+              <Chip selected size="sm" onRemove={() => updateFilter("category", "")}>
+                {selectedCategoryName}
               </Chip>
             )}
-
-            {woodType && (
+            {filters.woodType && (
               <Chip
                 selected
                 size="sm"
-                dotColor={getSwatchColor(woodType)}
-                onRemove={() => {
-                  setWoodType("");
-                  setPage(1);
-                }}
+                dotColor={getSwatchColor(filters.woodType)}
+                onRemove={() => updateFilter("woodType", "")}
               >
-                گونه چوب: {woodType}
+                {filters.woodType}
               </Chip>
             )}
-
-            {featured && (
-              <Chip
-                selected
-                size="sm"
-                onRemove={() => {
-                  setFeatured(null);
-                  setPage(1);
-                }}
-              >
-                فقط پرفروش‌ها
+            {filters.featured && (
+              <Chip selected size="sm" onRemove={() => updateFilter("featured", false)}>
+                پرفروش‌ها
               </Chip>
             )}
-
-            {priceRange !== "all" && (
-              <Chip
-                selected
-                size="sm"
-                onRemove={() => {
-                  setPriceRange("all");
-                  setPage(1);
-                }}
-              >
-                محدوده قیمت
+            {filters.priceRange !== "all" && (
+              <Chip selected size="sm" onRemove={() => updateFilter("priceRange", "all")}>
+                {priceRangeLabel}
               </Chip>
             )}
-
-            {search && (
+            {filters.search && (
               <Chip
                 selected
                 size="sm"
                 onRemove={() => {
-                  setSearch("");
-                  setPage(1);
+                  setSearchInput("");
+                  updateFilter("search", "");
                 }}
               >
-                جستجو: «{search}»
+                «{filters.search}»
               </Chip>
             )}
 
             <button
               type="button"
               onClick={clearAllFilters}
-              className="text-stone-500 hover:text-red-700 font-semibold text-xs mr-auto flex items-center gap-1 transition-colors px-2 py-1"
+              className="mr-auto flex items-center gap-1 px-2 py-1 text-[var(--color-ink-soft)] transition-colors hover:text-red-700"
             >
-              <RotateCcw className="w-3.5 h-3.5" />
-              پاک کردن همه فیلترها
+              <RotateCcw className="h-3.5 w-3.5" />
+              پاک کردن همه
             </button>
           </div>
         )}
 
-        {/* Catalog Main Layout: Sidebar (Desktop) + Product Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* ========================================================================= */}
-          {/* DESKTOP FILTER SIDEBAR (4 cols)                                          */}
-          {/* ========================================================================= */}
-          <aside className="hidden lg:block lg:col-span-3 space-y-6 sticky top-28">
-            <div className="bg-white p-5 rounded-3xl border border-stone-200/80 shadow-2xs space-y-6">
-              {/* Header */}
-              <div className="flex items-center justify-between pb-3 border-b border-stone-100">
-                <div className="flex items-center gap-2 font-bold font-serif text-stone-900 text-sm">
-                  <SlidersHorizontal className="w-4 h-4 text-amber-900" />
-                  <span>فیلترهای تخصصی کارگاه</span>
-                </div>
+        <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-12">
+          <aside className="hidden lg:col-span-3 lg:block">
+            <div className="sticky top-28 space-y-6 rounded-2xl border border-[var(--color-border)] bg-white p-5">
+              <div className="flex items-center justify-between border-b border-[var(--color-border-subtle)] pb-3">
+                <span className="flex items-center gap-2 font-serif text-sm font-bold text-[var(--color-ink)]">
+                  <SlidersHorizontal className="h-4 w-4 text-[var(--color-accent)]" />
+                  فیلترها
+                </span>
                 {activeFiltersCount > 0 && (
                   <button
                     type="button"
                     onClick={clearAllFilters}
-                    className="text-[11px] text-stone-500 hover:text-red-700 transition-colors"
+                    className="text-[11px] text-[var(--color-ink-muted)] hover:text-red-700"
                   >
-                    حذف فیلترها
+                    حذف
                   </button>
                 )}
               </div>
-
-              {/* 1. Category Checkbox Group */}
-              <div className="space-y-3">
-                <label className="text-xs font-bold text-stone-800 uppercase tracking-wide block">
-                  دسته‌بندی‌های آثار
-                </label>
-                <div className="space-y-2.5">
-                  <Checkbox
-                    checked={category === ""}
-                    onCheckedChange={() => {
-                      setCategory("");
-                      setPage(1);
-                    }}
-                    label="همه دسته‌بندی‌ها"
-                  />
-                  {categories.map((c) => (
-                    <div key={c.id} className="flex items-center justify-between">
-                      <Checkbox
-                        checked={category === c.slug}
-                        onCheckedChange={() => {
-                          setCategory(category === c.slug ? "" : c.slug);
-                          setPage(1);
-                        }}
-                        label={c.name}
-                      />
-                      {c.productCount !== undefined && (
-                        <span className="text-[11px] text-stone-400 font-mono">
-                          ({toPersianDigits(c.productCount)})
-                        </span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <Separator />
-
-              {/* 2. Wood Species Swatch Chips */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-bold text-stone-800 uppercase tracking-wide block">
-                    گونه چوب طبیعی
-                  </label>
-                  {woodType && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setWoodType("");
-                        setPage(1);
-                      }}
-                      className="text-[10px] text-amber-900 hover:underline"
-                    >
-                      پاک کردن
-                    </button>
-                  )}
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {facets.woodTypes.map((w) => {
-                    const isSelected = woodType === w;
-                    return (
-                      <Chip
-                        key={w}
-                        selected={isSelected}
-                        size="sm"
-                        dotColor={getSwatchColor(w)}
-                        onClick={() => {
-                          setWoodType(isSelected ? "" : w);
-                          setPage(1);
-                        }}
-                      >
-                        {w}
-                      </Chip>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <Separator />
-
-              {/* 3. Price Preset Chips */}
-              <div className="space-y-3">
-                <label className="text-xs font-bold text-stone-800 uppercase tracking-wide block">
-                  محدوده بودجه خرید
-                </label>
-                <div className="flex flex-col gap-1.5">
-                  {[
-                    { id: "all", label: "تمام قیمت‌ها" },
-                    { id: "under-5m", label: "کمتر از ۵ میلیون تومان" },
-                    { id: "5m-15m", label: "۵ تا ۱۵ میلیون تومان" },
-                    { id: "above-15m", label: "بیش از ۱۵ میلیون تومان" },
-                  ].map((p) => (
-                    <button
-                      key={p.id}
-                      type="button"
-                      onClick={() => {
-                        setPriceRange(p.id);
-                        setPage(1);
-                      }}
-                      className={`text-right px-3 py-2 rounded-xl text-xs font-medium transition-colors flex items-center justify-between ${
-                        priceRange === p.id
-                          ? "bg-[#b85d19] text-white font-bold shadow-2xs"
-                          : "text-stone-700 hover:bg-[#fdf1e7]/60"
-                      }`}
-                    >
-                      <span>{p.label}</span>
-                      {priceRange === p.id && <Check className="w-3.5 h-3.5" />}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <Separator />
-
-              {/* 4. Special Workshop Badges */}
-              <div className="space-y-2.5">
-                <label className="text-xs font-bold text-stone-800 uppercase tracking-wide block">
-                  فیلترهای ویژه
-                </label>
-                <Checkbox
-                  checked={featured === true}
-                  onCheckedChange={(checked) => {
-                    setFeatured(checked ? true : null);
-                    setPage(1);
-                  }}
-                  label="شاهکارهای پرفروش کارگاه"
-                  description="آثار با بیشترین سفارش و استقبال مشتریان"
-                />
-              </div>
+              {filterControls}
             </div>
           </aside>
 
-          {/* ========================================================================= */}
-          {/* PRODUCT GRID (9 cols)                                                    */}
-          {/* ========================================================================= */}
-          <main className="lg:col-span-9 space-y-6">
-            {/* Total Results Counter */}
-            <div className="flex items-center justify-between text-xs sm:text-sm text-stone-600 px-1">
+          <main className="space-y-6 lg:col-span-9">
+            <div className="flex items-center justify-between px-1 text-xs text-[var(--color-ink-soft)] sm:text-sm">
               <span>
-                نمایش <strong>{toPersianDigits(products.length)}</strong> اثر از مجموع{" "}
-                <strong>{toPersianDigits(total)}</strong> دست‌سازه چوبی
+                <strong>{toPersianDigits(products.length)}</strong> اثر از{" "}
+                <strong>{toPersianDigits(total)}</strong> دست‌سازه
               </span>
               {loading && (
-                <span className="text-amber-900 font-medium animate-pulse text-xs">
-                  در حال به‌روزرسانی آثار...
+                <span className="animate-pulse text-[11px] font-medium text-[var(--color-accent)]">
+                  در حال به‌روزرسانی…
                 </span>
               )}
             </div>
 
-            {/* Loading Skeleton / Empty State / Grid */}
             {loading && products.length === 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {[...Array(6)].map((_, i) => (
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                {[1, 2, 3, 4, 5, 6].map((key) => (
                   <div
-                    key={i}
-                    className="h-96 rounded-3xl bg-stone-200/60 animate-pulse border border-stone-200"
+                    key={key}
+                    className="h-96 animate-pulse rounded-3xl border border-[var(--color-border)] bg-[var(--color-surface-2)]/60"
                   />
                 ))}
               </div>
-            ) : products.length === 0 ? (
-              <div className="bg-white rounded-3xl border border-stone-200/90 p-12 text-center space-y-4 shadow-2xs">
-                <div className="w-16 h-16 rounded-2xl bg-amber-50 text-amber-900 flex items-center justify-center mx-auto border border-amber-200/60">
-                  <Trees className="w-8 h-8 opacity-60" />
-                </div>
-                <h3 className="text-lg font-bold font-serif text-stone-900">
-                  اثری متناسب با این فیلترها یافت نشد
-                </h3>
-                <p className="text-xs sm:text-sm text-stone-500 max-w-md mx-auto leading-relaxed">
-                  می‌توانید فیلترهای اعمال‌شده را پاک کنید یا گونه چوب دیگری را برای جستجو انتخاب فرمایید.
-                </p>
-                <Button variant="default" size="sm" onClick={clearAllFilters} className="mt-2">
-                  بازنشانی همه فیلترها
-                </Button>
-              </div>
+            ) : isEmpty ? (
+              <EmptyState
+                icon={<Trees className="h-7 w-7" />}
+                title="اثری با این فیلترها پیدا نشد"
+                description="می‌توانید فیلترها را پاک کنید یا گونهٔ چوب دیگری را انتخاب کنید."
+                action={
+                  <Button size="sm" onClick={clearAllFilters}>
+                    بازنشانی فیلترها
+                  </Button>
+                }
+              />
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 {products.map((product) => (
                   <ProductCard key={product.id} product={product} />
                 ))}
               </div>
             )}
 
-            {/* Pagination Controls */}
             {totalPages > 1 && (
-              <div className="pt-8 flex items-center justify-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={page <= 1 || loading}
-                  className="gap-1 text-xs"
-                >
-                  <ArrowRight className="w-3.5 h-3.5" />
-                  <span>صفحه قبل</span>
-                </Button>
+              <div className="flex flex-col items-center gap-3 pt-6 sm:flex-row sm:justify-center">
+                <div className="flex items-center gap-1.5">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPage((current) => Math.max(1, current - 1))}
+                    disabled={page <= 1 || loading}
+                    className="gap-1 text-xs"
+                  >
+                    <ArrowRight className="h-3.5 w-3.5" />
+                    قبلی
+                  </Button>
 
-                <div className="flex items-center gap-1 px-2">
-                  {[...Array(totalPages)].map((_, i) => {
-                    const pNum = i + 1;
-                    const isCurrent = pNum === page;
-                    return (
-                      <button
-                        key={pNum}
-                        type="button"
-                        onClick={() => setPage(pNum)}
-                        className={`w-9 h-9 rounded-xl text-xs font-bold transition-all ${
-                          isCurrent
-                            ? "bg-[#b85d19] text-white shadow-2xs"
-                            : "bg-white text-stone-700 hover:bg-[#fdf1e7]/60 border border-[#e8ded3]"
-                        }`}
-                      >
-                        {toPersianDigits(pNum)}
-                      </button>
-                    );
-                  })}
+                  {pageWindow(page, totalPages).map((pageNumber) => (
+                    <button
+                      key={pageNumber}
+                      type="button"
+                      onClick={() => setPage(pageNumber)}
+                      className={`h-9 w-9 rounded-xl text-xs font-bold transition-all ${
+                        pageNumber === page
+                          ? "bg-[var(--color-accent)] text-white"
+                          : "border border-[var(--color-border)] bg-white text-[var(--color-ink-soft)] hover:bg-[var(--color-accent-soft)]"
+                      }`}
+                    >
+                      {toPersianDigits(pageNumber)}
+                    </button>
+                  ))}
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
+                    disabled={page >= totalPages || loading}
+                    className="gap-1 text-xs"
+                  >
+                    بعدی
+                    <ArrowLeft className="h-3.5 w-3.5" />
+                  </Button>
                 </div>
 
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={page >= totalPages || loading}
-                  className="gap-1 text-xs"
-                >
-                  <span>صفحه بعد</span>
-                  <ArrowLeft className="w-3.5 h-3.5" />
-                </Button>
+                <span className="text-[11px] text-[var(--color-ink-muted)]">
+                  صفحهٔ {toPersianDigits(page)} از {toPersianDigits(totalPages)}
+                </span>
               </div>
             )}
           </main>
         </div>
       </div>
 
-      {/* ========================================================================= */}
-      {/* MOBILE FILTER DRAWER (Sheet)                                             */}
-      {/* ========================================================================= */}
       <Sheet open={mobileFilterOpen} onClose={() => setMobileFilterOpen(false)} side="right">
         <SheetHeader onClose={() => setMobileFilterOpen(false)}>
           <div className="flex items-center gap-2">
-            <SlidersHorizontal className="w-5 h-5 text-amber-900" />
-            <SheetTitle>فیلترهای کاتالوگ آثار</SheetTitle>
+            <SlidersHorizontal className="h-5 w-5 text-[var(--color-accent)]" />
+            <SheetTitle>فیلترهای کاتالوگ</SheetTitle>
           </div>
         </SheetHeader>
 
-        <SheetContent className="space-y-6 overflow-y-auto">
-          {/* 1. Category Checkboxes */}
-          <div className="space-y-3">
-            <label className="text-xs font-bold text-stone-800 uppercase tracking-wide block">
-              دسته‌بندی‌های آثار
-            </label>
-            <div className="space-y-2.5">
-              <Checkbox
-                checked={category === ""}
-                onCheckedChange={() => {
-                  setCategory("");
-                  setPage(1);
-                }}
-                label="همه دسته‌بندی‌ها"
-              />
-              {categories.map((c) => (
-                <div key={c.id} className="flex items-center justify-between">
-                  <Checkbox
-                    checked={category === c.slug}
-                    onCheckedChange={() => {
-                      setCategory(category === c.slug ? "" : c.slug);
-                      setPage(1);
-                    }}
-                    label={c.name}
-                  />
-                  {c.productCount !== undefined && (
-                    <span className="text-[11px] text-stone-400 font-mono">
-                      ({toPersianDigits(c.productCount)})
-                    </span>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
+        <SheetContent className="space-y-6 overflow-y-auto">{filterControls}</SheetContent>
 
-          <Separator />
-
-          {/* 2. Wood Species Swatch Chips */}
-          <div className="space-y-3">
-            <label className="text-xs font-bold text-stone-800 uppercase tracking-wide block">
-              گونه چوب طبیعی
-            </label>
-            <div className="flex flex-wrap gap-2">
-              {facets.woodTypes.map((w) => {
-                const isSelected = woodType === w;
-                return (
-                  <Chip
-                    key={w}
-                    selected={isSelected}
-                    size="sm"
-                    dotColor={getSwatchColor(w)}
-                    onClick={() => {
-                      setWoodType(isSelected ? "" : w);
-                      setPage(1);
-                    }}
-                  >
-                    {w}
-                  </Chip>
-                );
-              })}
-            </div>
-          </div>
-
-          <Separator />
-
-          {/* 3. Budget Range */}
-          <div className="space-y-3">
-            <label className="text-xs font-bold text-stone-800 uppercase tracking-wide block">
-              محدوده بودجه خرید
-            </label>
-            <div className="flex flex-col gap-1.5">
-              {[
-                { id: "all", label: "تمام قیمت‌ها" },
-                { id: "under-5m", label: "کمتر از ۵ میلیون تومان" },
-                { id: "5m-15m", label: "۵ تا ۱۵ میلیون تومان" },
-                { id: "above-15m", label: "بیش از ۱۵ میلیون تومان" },
-              ].map((p) => (
-                <button
-                  key={p.id}
-                  type="button"
-                  onClick={() => {
-                    setPriceRange(p.id);
-                    setPage(1);
-                  }}
-                  className={`text-right px-3 py-2 rounded-xl text-xs font-medium transition-colors flex items-center justify-between ${
-                    priceRange === p.id
-                      ? "bg-[#b85d19] text-white font-bold shadow-2xs"
-                      : "text-stone-700 hover:bg-[#fdf1e7]/60"
-                  }`}
-                >
-                  <span>{p.label}</span>
-                  {priceRange === p.id && <Check className="w-3.5 h-3.5" />}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <Separator />
-
-          {/* 4. Featured Checkbox */}
-          <div className="space-y-2">
-            <Checkbox
-              checked={featured === true}
-              onCheckedChange={(checked) => {
-                setFeatured(checked ? true : null);
-                setPage(1);
-              }}
-              label="شاهکارهای پرفروش کارگاه"
-              description="آثار با بیشترین سفارش و استقبال مشتریان"
-            />
-          </div>
-        </SheetContent>
-
-        <SheetFooter className="gap-2">
-          <Button
-            variant="outline"
-            size="default"
-            className="flex-1"
-            onClick={clearAllFilters}
-          >
+        <SheetFooter className="flex gap-2">
+          <Button variant="outline" className="flex-1" onClick={clearAllFilters}>
             پاک کردن
           </Button>
-          <Button
-            variant="default"
-            size="default"
-            className="flex-1"
-            onClick={() => setMobileFilterOpen(false)}
-          >
-            مشاهده نتایج ({toPersianDigits(total)})
+          <Button className="flex-1" onClick={() => setMobileFilterOpen(false)}>
+            مشاهدهٔ {toPersianDigits(total)} نتیجه
           </Button>
         </SheetFooter>
       </Sheet>
+
     </div>
   );
 }

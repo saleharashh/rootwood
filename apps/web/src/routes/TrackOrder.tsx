@@ -18,6 +18,7 @@ import { api, type Order } from "@/lib/api";
 import { formatPriceToman, toPersianDigits, formatJalaliDate } from "@/lib/price";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { SITE_CONTACT } from "@/lib/site-config";
 
 const STAGES = [
   { key: "PENDING", label: "ثبت اولیه سفارش", desc: "در انتظار پرداخت یا تأیید نهایی کارگاه" },
@@ -94,13 +95,13 @@ export function TrackOrder() {
         <div className="text-center space-y-3">
           <Badge variant="gold" className="px-3 py-1">
             <Sparkles className="w-3.5 h-3.5 text-[#b85d19]" />
-            <span>سامانه پیگیری ساخت و ارسال آثار چوبی</span>
+            <span>پیگیری سفارش</span>
           </Badge>
-          <h1 className="text-3xl sm:text-4xl font-black font-serif text-[#2b1e17]">
-            پیگیری وضعیت سفارش و فرآیند خلق اثر
+          <h1 className="text-2xl sm:text-3xl font-black font-serif text-[#2b1e17]">
+            وضعیت سفارش خود را ببینید
           </h1>
           <p className="text-xs sm:text-sm text-[#655347] max-w-lg mx-auto leading-relaxed">
-            با وارد کردن کد پیگیری یا شناسه سفارش، می‌توانید از مرحله انتخاب چوب در کارگاه تا بسته‌بندی پالت و ارسال را به صورت زنده دنبال کنید.
+            کد پیگیری را وارد کنید تا مرحلهٔ ساخت، بسته‌بندی و ارسال اثر را ببینید.
           </p>
         </div>
 
@@ -312,7 +313,9 @@ export function TrackOrder() {
                 </div>
                 <div className="flex items-center gap-1.5 text-[#b85d19] font-medium shrink-0">
                   <Phone className="w-3.5 h-3.5" />
-                  <span>پشتیبانی کارگاه: 021-88776655</span>
+                  <a href={SITE_CONTACT.telHref} className="hover:underline">
+                    پشتیبانی و ایتا: <span dir="ltr" className="font-mono font-bold">{SITE_CONTACT.phone}</span>
+                  </a>
                 </div>
               </div>
             </div>

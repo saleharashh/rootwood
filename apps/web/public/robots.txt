@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+
+Disallow: /admin
+Disallow: /account
+Disallow: /cart
+Disallow: /checkout
+Disallow: /track
+Disallow: /api/
+
+Sitemap: https://rootwoodgroup.ir/sitemap.xml

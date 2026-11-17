@@ -16,11 +16,32 @@ export default defineConfig({
         target: process.env.VITE_API_PROXY || "http://127.0.0.1:8000",
         changeOrigin: true,
       },
+      "/sitemap.xml": {
+        target: process.env.VITE_API_PROXY || "http://127.0.0.1:8000",
+        changeOrigin: true,
+        rewrite: () => "/api/sitemap.php",
+      },
     },
   },
   build: {
     outDir: "dist",
     emptyOutDir: true,
     sourcemap: false,
+    rolldownOptions: {
+      output: {
+        codeSplitting: {
+          groups: [
+            {
+              name: "react-vendor",
+              test: /node_modules[\\/](react|react-dom|scheduler|wouter)[\\/]/,
+            },
+            {
+              name: "motion",
+              test: /node_modules[\\/](motion|motion-dom|motion-utils|framer-motion)[\\/]/,
+            },
+          ],
+        },
+      },
+    },
   },
 });

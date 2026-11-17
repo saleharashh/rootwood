@@ -10,7 +10,20 @@ function handle_cors(): void {
     $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
     $allowedOrigins = $config['cors_origins'];
 
-    if ($origin && in_array($origin, $allowedOrigins, true)) {
+    $isAllowed = false;
+    if ($origin) {
+        $host = parse_url($origin, PHP_URL_HOST) ?? '';
+        if (in_array($origin, $allowedOrigins, true) ||
+            in_array('*', $allowedOrigins, true) ||
+            str_ends_with($host, '.up.railway.app') ||
+            str_ends_with($host, '.railway.app') ||
+            $host === 'localhost' ||
+            $host === '127.0.0.1') {
+            $isAllowed = true;
+        }
+    }
+
+    if ($isAllowed) {
         header("Access-Control-Allow-Origin: $origin");
         header('Access-Control-Allow-Credentials: true');
     } elseif (!empty($allowedOrigins)) {

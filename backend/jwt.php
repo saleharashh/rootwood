@@ -6,6 +6,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/helpers.php';
 
 function base64_url_encode(string $data): string {
     return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');
@@ -104,8 +105,15 @@ function get_auth_user(): ?array {
         return null;
     }
 
+    // Enforce admin role strictly by verified phone allowlist
+    $user['role'] = is_admin_phone($user['phone'] ?? null) ? 'ADMIN' : 'CUSTOMER';
+
     $currentUser = $user;
     return $user;
+}
+
+function optional_auth(): ?array {
+    return get_auth_user();
 }
 
 function require_auth(): array {
@@ -118,7 +126,7 @@ function require_auth(): array {
 
 function require_admin(): array {
     $user = require_auth();
-    if ($user['role'] !== 'ADMIN') {
+    if ($user['role'] !== 'ADMIN' || !is_admin_phone($user['phone'] ?? null)) {
         json_error('دسترسی مجاز نیست. این بخش مخصوص مدیران است', 403);
     }
     return $user;

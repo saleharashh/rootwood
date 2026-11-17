@@ -6,6 +6,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/helpers.php';
 require_once __DIR__ . '/jwt.php';
 require_once __DIR__ . '/response.php';
 
@@ -69,14 +70,16 @@ function handle_orders(string $subpath, string $method): void {
     // 0. Public Order Tracking: GET /track?code=...
     if (($subpath === '/track' || $subpath === '/lookup') && $method === 'GET') {
         $code = trim($_GET['code'] ?? $_GET['orderNumber'] ?? $_GET['orderId'] ?? '');
-        $phone = trim($_GET['phone'] ?? '');
+        $rawPhone = trim($_GET['phone'] ?? '');
+        $phone = $rawPhone !== '' ? (normalize_iranian_phone($rawPhone) ?? $rawPhone) : '';
 
         if ($code === '') {
             json_error('کد یا شناسه سفارش الزامی است', 400);
         }
 
-        $where = ['(o.id = ? OR o.order_number = ? OR o.id LIKE ?)'];
-        $params = [$code, $code, "$code%"];
+        // Exact identifiers only: a short prefix must never expose another order.
+        $where = ['(o.id = ? OR o.order_number = ?)'];
+        $params = [$code, $code];
 
         if ($phone !== '') {
             $where[] = '(u.phone = ? OR JSON_UNQUOTE(JSON_EXTRACT(o.shipping_address, "$.phone")) = ?)';
@@ -110,6 +113,18 @@ function handle_orders(string $subpath, string $method): void {
             $at = strpos($e, '@');
             $formatted['email'] = $at > 2 ? substr($e, 0, 2) . '***' . substr($e, $at) : '***';
         }
+        if (!empty($formatted['shippingAddress']['fullName'])) {
+            $name = (string)$formatted['shippingAddress']['fullName'];
+            $formatted['shippingAddress']['fullName'] = mb_substr($name, 0, 1) . '***';
+            $formatted['shippingAddress']['recipientName'] = $formatted['shippingAddress']['fullName'];
+        }
+        if (!empty($formatted['shippingAddress']['line1'])) {
+            $street = (string)$formatted['shippingAddress']['line1'];
+            $formatted['shippingAddress']['line1'] = mb_strlen($street) > 12
+                ? mb_substr($street, 0, 12) . '…'
+                : $street;
+            $formatted['shippingAddress']['street'] = $formatted['shippingAddress']['line1'];
+        }
 
         json_response(['order' => $formatted]);
     }
@@ -126,11 +141,23 @@ function handle_orders(string $subpath, string $method): void {
         $line1 = trim((string)($shippingAddr['line1'] ?? $shippingAddr['street'] ?? ''));
         $city = trim((string)($shippingAddr['city'] ?? ''));
         $state = trim((string)($shippingAddr['state'] ?? $shippingAddr['province'] ?? ''));
-        $postalCode = trim((string)($shippingAddr['postalCode'] ?? ''));
-        $phone = trim((string)($shippingAddr['phone'] ?? '')) ?: ($user['phone'] ?? '');
+        $postalCode = normalize_postal_code((string)($shippingAddr['postalCode'] ?? ''));
+        $phone = normalize_iranian_phone((string)($shippingAddr['phone'] ?? ($user['phone'] ?? '')));
 
-        if (!$shippingAddr || empty($fullName) || empty($line1) || empty($city)) {
-            json_error('آدرس تحویل گیرنده به طور کامل وارد نشده است', 400);
+        if (!$shippingAddr || mb_strlen($fullName) < 3 || is_placeholder_name($fullName)) {
+            json_error('لطفاً نام و نام خانوادگی تحویل‌گیرنده را به صورت دقیق وارد نمایید', 400);
+        }
+        if ($phone === null) {
+            json_error('لطفاً شماره موبایل معتبر تحویل‌گیرنده (مانند 09123456789) را وارد نمایید', 400);
+        }
+        if (mb_strlen($state) < 2 || mb_strlen($city) < 2) {
+            json_error('لطفاً استان و شهر تحویل را به صورت دقیق وارد نمایید', 400);
+        }
+        if (mb_strlen($line1) < 10) {
+            json_error('لطفاً نشانی دقیق پستی (خیابان، کوچه، پلاک و واحد) را حداقل در ۱۰ کاراکتر وارد نمایید', 400);
+        }
+        if ($postalCode === null) {
+            json_error('کد پستی باید دقیقاً ۱۰ رقم بدون خط تیره باشد', 400);
         }
 
         // Get user cart items
@@ -194,12 +221,16 @@ function handle_orders(string $subpath, string $method): void {
                 'street' => $line1,
                 'line2' => trim((string)($shippingAddr['line2'] ?? '')) ?: null,
                 'city' => $city,
-                'state' => $state ?: null,
-                'province' => $state ?: null,
-                'postalCode' => $postalCode ?: '0000000000',
+                'state' => $state,
+                'province' => $state,
+                'postalCode' => $postalCode,
                 'country' => 'IR',
                 'phone' => $phone,
             ], JSON_UNESCAPED_UNICODE);
+
+            if (is_placeholder_name($user['name'] ?? null)) {
+                $pdo->prepare("UPDATE users SET name = ? WHERE id = ?")->execute([$fullName, $user['id']]);
+            }
 
             $insOrder = $pdo->prepare("
                 INSERT INTO orders (id, order_number, user_id, email, status, subtotal, shipping, total, shipping_address, note)
@@ -217,15 +248,19 @@ function handle_orders(string $subpath, string $method): void {
 
             // Save address if requested
             if (!empty($body['saveAddress'])) {
+                $cntAddr = $pdo->prepare("SELECT COUNT(*) FROM addresses WHERE user_id = ?");
+                $cntAddr->execute([$user['id']]);
+                $isDef = ((int)$cntAddr->fetchColumn() === 0) ? 1 : 0;
+
                 $addrStmt = $pdo->prepare("
                     INSERT INTO addresses (id, user_id, full_name, line1, line2, city, state, postal_code, phone, is_default)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ");
                 $addrStmt->execute([
                     generate_uuid(), $user['id'], $fullName,
                     $line1, trim((string)($shippingAddr['line2'] ?? '')) ?: null,
-                    $city, $state ?: null,
-                    $postalCode ?: null, $phone
+                    $city, $state,
+                    $postalCode, $phone, $isDef
                 ]);
             }
 
