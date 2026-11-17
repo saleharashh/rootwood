@@ -1,11 +1,12 @@
 # Stage 1: Build Vite React Frontend SPA
-FROM node:20-alpine AS frontend-builder
+FROM node:22-alpine AS frontend-builder
 RUN corepack enable && corepack prepare pnpm@11.24.0 --activate
 WORKDIR /app
 
 # Install dependencies using root workspace
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/web/package.json ./apps/web/
+COPY apps/api/package.json ./apps/api/
 RUN pnpm install --frozen-lockfile
 
 # Copy frontend source and build
