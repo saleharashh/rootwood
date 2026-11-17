@@ -1,0 +1,19 @@
+Options -Indexes
+RewriteEngine On
+
+# 1. Do not rewrite /api requests (pass directly to /api/ directory)
+RewriteRule ^api/ - [L]
+
+# 2. Do not rewrite existing files or directories
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# 3. Rewrite all SPA client-side routes to index.html
+RewriteRule ^ index.html [L]
+
+# Hardening & caching headers
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>

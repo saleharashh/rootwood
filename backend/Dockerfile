@@ -3,8 +3,9 @@ FROM php:8.2-apache
 # Install PDO MySQL
 RUN docker-php-ext-install pdo pdo_mysql
 
-# Enable apache modules
-RUN a2enmod rewrite headers
+# Configure MPM to prevent conflicting MPMs error
+RUN a2dismod -f mpm_event mpm_worker || true \
+    && a2enmod mpm_prefork rewrite headers
 
 # Allow .htaccess overrides in /var/www/
 RUN sed -i '/<Directory \/var\/www\/>/,/<\/Directory>/ s/AllowOverride None/AllowOverride All/' /etc/apache2/apache2.conf
