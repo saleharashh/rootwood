@@ -7,7 +7,7 @@ WORKDIR /app
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/web/package.json ./apps/web/
 COPY apps/api/package.json ./apps/api/
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --no-frozen-lockfile
 
 # Copy frontend source and build
 COPY apps/web/ ./apps/web/
